@@ -14,8 +14,8 @@ fun ButtonComponent(
     Button(
         onClick = onClick,
         modifier = Modifier
-            .fillMaxWidth()
     ) {
         Text(text = text)
     }
 }
+
