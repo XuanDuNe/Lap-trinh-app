@@ -37,7 +37,6 @@ fun BorrowBookScreen() {
             modifier = Modifier.padding(bottom = 24.dp)
         )
 
-        // Hình ảnh sách
         Image(
             painter = painterResource(id = R.drawable.yeumbangmatgiuembangtim),
             contentDescription = "Book Image",
@@ -48,7 +47,7 @@ fun BorrowBookScreen() {
         )
 
         Text(
-            text = "Yêu Em Bằng Mắt Giữ Em Bằng Tim", // Tên sách
+            text = "Yêu Em Bằng Mắt Giữ Em Bằng Tim",
             style = MaterialTheme.typography.subtitle1,
             modifier = Modifier.padding(bottom = 16.dp)
         )
@@ -71,7 +70,7 @@ fun BorrowBookScreen() {
 
         // Nút xác nhận
         ButtonComponent(
-            onClick = { /* Xử lý xác nhận mượn sách */ },
+            onClick = {  },
             text = "Xác nhận"
         )
     }
