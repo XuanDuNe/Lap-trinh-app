@@ -22,10 +22,12 @@ import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavController
+import androidx.navigation.compose.rememberNavController
 import com.example.librarybooklendingsystem.R
 
 @Composable
-fun BorrowBookScreen() {
+fun BorrowBookScreen(navController: NavController) {
     val studentName = remember { mutableStateOf(TextFieldValue("")) }
     val expectedReturnDate = remember { mutableStateOf(TextFieldValue("")) }
 
@@ -128,64 +130,12 @@ fun BorrowBookScreen() {
                 }
             }
         },
-        bottomBar = { BottomNavigationBar() }
+        bottomBar = { BottomNavigationBar(navController = navController) }
     )
-}
-
-@Composable
-fun BottomNavigationBar() {
-    var selectedItem by remember { mutableStateOf(0) }
-
-    BottomNavigation(
-        backgroundColor = Color(0xFFD3D3D3),
-        contentColor = Color(0xFF008080)
-    ) {
-        //Trang chủ
-        BottomNavigationItem(
-            icon = {
-                Icon(
-                    Icons.Filled.Home,
-                    contentDescription = "Trang chủ",
-                    modifier = Modifier.size(32.dp)
-                )
-            },
-            label = { Text("Trang chủ") },
-            selected = selectedItem == 0,
-            onClick = { selectedItem = 0 }
-        )
-
-        // Danh mục
-        BottomNavigationItem(
-            icon = {
-                Icon(
-                    Icons.Filled.List,
-                    contentDescription = "Danh mục",
-                    modifier = Modifier.size(38.dp)
-                )
-            },
-            label = { Text("Danh mục") },
-            selected = selectedItem == 1,
-            onClick = { selectedItem = 1 }
-        )
-
-        // Cá nhân
-        BottomNavigationItem(
-            icon = {
-                Icon(
-                    Icons.Filled.Person,
-                    contentDescription = "Cá nhân",
-                    modifier = Modifier.size(32.dp)
-                )
-            },
-            label = { Text("Cá nhân") },
-            selected = selectedItem == 2,
-            onClick = { selectedItem = 2 }
-        )
-    }
 }
 
 @Preview(showBackground = true)
 @Composable
 fun BorrowBookScreenPreview() {
-    BorrowBookScreen()
+    BorrowBookScreen(navController = rememberNavController())
 }
