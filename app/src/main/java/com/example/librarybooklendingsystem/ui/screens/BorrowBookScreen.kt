@@ -130,7 +130,6 @@ fun BorrowBookScreen(navController: NavController) {
                 }
             }
         },
-        bottomBar = { BottomNavigationBar(navController = navController) }
     )
 }
 

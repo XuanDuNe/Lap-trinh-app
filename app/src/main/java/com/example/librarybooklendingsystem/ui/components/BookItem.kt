@@ -1,2 +1,2 @@
-package com.example.librarybooklendingsystem.ui.components
+package com.example.librarybooklendingsystem.ui.screens
 

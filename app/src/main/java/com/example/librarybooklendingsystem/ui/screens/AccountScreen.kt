@@ -103,19 +103,72 @@ fun AccountScreen(navController: NavController?) {
                 BookGrid()
             }
         },
-        bottomBar = { navController?.let { BottomNavigationBar(it) } }
     )
 }
 
 @Composable
 fun BookGrid() {
     val books = listOf(
-        Book("Yêu em bằng mắt giữ em bằng tim", "Nguyễn Văn Duy", "Ngày mượn: 10/10/2025", "Ngày dự kiến trả: 12/12/2025"),
-        Book("Yêu", "Nguyễn Văn Duy", "Ngày mượn: 10/10/2025", "Ngày dự kiến trả: 15/12/2025"),
-        Book("Lì quá để nói quài", "Nguyễn Văn Duy", "Ngày mượn: 10/10/2025", "Ngày dự kiến trả: 20/12/2025"),
-        Book("Yêu em bằng mắt giữ em bằng tim", "Nguyễn Văn Duy", "Ngày mượn: 10/10/2025", "Ngày dự kiến trả: 12/12/2025"),
-        Book("Yêu", "Nguyễn Văn Duy", "Ngày mượn: 10/10/2025", "Ngày dự kiến trả: 15/12/2025"),
-        Book("Lì quá để nói quài", "Nguyễn Văn Duy", "Ngày mượn: 10/10/2025", "Ngày dự kiến trả: 20/12/2025")
+        Book(
+            "Yêu em bằng mắt giữ em bằng tim",
+            "Nguyễn Văn Duy",
+            "Ngày mượn: 10/10/2025",
+            "Ngày dự kiến trả: 12/12/2025",
+            "Ngôn tình",
+            "Có sẵn",
+            R.drawable.yeumbangmatgiuembangtim,
+            "123"
+        ),
+        Book(
+            "Yêu",
+            "Nguyễn Văn Duy",
+            "Ngày mượn: 10/10/2025",
+            "Ngày dự kiến trả: 15/12/2025",
+            "Ngôn tình",
+            "Có sẵn",
+            R.drawable.yeumbangmatgiuembangtim,
+            "123"
+        ),
+        Book(
+            "Lì quá để nói quài",
+            "Nguyễn Văn Duy",
+            "Ngày mượn: 10/10/2025",
+            "Ngày dự kiến trả: 20/12/2025",
+            "Ngôn tình",
+            "Có sẵn",
+            R.drawable.yeumbangmatgiuembangtim,
+            "123"
+        ),
+        Book(
+            "Yêu em bằng mắt giữ em bằng tim",
+            "Nguyễn Văn Duy",
+            "Ngày mượn: 10/10/2025",
+            "Ngày dự kiến trả: 12/12/2025",
+            "Ngôn tình",
+            "Có sẵn",
+            R.drawable.yeumbangmatgiuembangtim,
+            "123"
+        ),
+        Book(
+            "Yêu",
+            "Nguyễn Văn Duy",
+            "Ngày mượn: 10/10/2025",
+            "Ngày dự kiến trả: 15/12/2025",
+            "Ngôn tình",
+            "Có sẵn",
+            R.drawable.yeumbangmatgiuembangtim,
+            "123"
+        ),
+        Book(
+            "Lì quá để nói quài",
+            "Nguyễn Văn Duy",
+            "Ngày mượn: 10/10/2025",
+            "Ngày dự kiến trả: 20/12/2025",
+            "Ngôn tình",
+            "Có sẵn",
+            R.drawable.yeumbangmatgiuembangtim,
+            "123"
+        )
     )
 
     LazyVerticalGrid(
@@ -150,7 +203,16 @@ fun BookItem(book: Book) {
     }
 }
 
-data class Book(val title: String, val author: String, val borrowDate: String, val dueDate: String)
+data class Book(
+    val title: String,
+    val author: String,
+    val borrowDate: String,
+    val dueDate: String,
+    val genre: String,
+    val status: String,
+    val coverResId: Int,
+    val id: String
+)
 
 @Preview(showBackground = true)
 @Composable
