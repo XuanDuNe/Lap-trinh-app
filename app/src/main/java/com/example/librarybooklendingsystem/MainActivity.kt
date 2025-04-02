@@ -11,6 +11,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.librarybooklendingsystem.ui.screens.AccountScreen
+import com.example.librarybooklendingsystem.ui.screens.AdminDashboard
 import com.example.librarybooklendingsystem.ui.screens.BorrowBookScreen
 import com.example.librarybooklendingsystem.ui.screens.BookDetailsScreen
 import com.example.librarybooklendingsystem.ui.screens.BottomNavigationBar
