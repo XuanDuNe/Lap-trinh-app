@@ -20,19 +20,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.navigation.NavController
+import androidx.navigation.compose.rememberNavController
 import com.example.librarybooklendingsystem.R
 
-class MainActivity : ComponentActivity() {
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        setContent {
-            AdminDashboard {}
-        }
-    }
-}
-
 @Composable
-fun AdminDashboard(onItemClick: (String) -> Unit) {
+fun AdminDashboard(navController: NavController) {
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -76,20 +69,20 @@ fun AdminDashboard(onItemClick: (String) -> Unit) {
         Spacer(modifier = Modifier.height(20.dp))
 
         val statistics = listOf(
-            "Thống kê mượn sách" to "Thống kê tình hình mượn sách theo thể loại",
-            "Thống kê người dùng" to "Thống kê tình hình người dùng mượn sách",
-            "Thống kê trả sách" to "Thống kê tình hình trả sách theo thể loại",
-            "Thống kê sách trong thư viện" to "Thống kê tình hình sách theo thể loại",
-            "Thống kê danh sách cần duyệt" to "Thống kê các yêu cầu đăng kí mượn sách"
+            "Thống kê mượn sách" to "borrowed_books_stats",
+            "Thống kê người dùng" to "user_stats",
+            "Thống kê trả sách" to "returned_books_stats",
+            "Thống kê sách trong thư viện" to "library_stats",
+            "Thống kê danh sách cần duyệt" to "pending_books_approval"
         )
 
-        statistics.forEach { (title, description) ->
+        statistics.forEach { (title, route) ->
             Card(
                 modifier = Modifier
                     .height(130.dp)
                     .fillMaxWidth()
                     .padding(vertical = 15.dp)
-                    .clickable { onItemClick(title) },
+                    .clickable { navController.navigate(route) },
                 shape = RoundedCornerShape(12.dp),
                 elevation = 6.dp
             ) {
@@ -107,7 +100,7 @@ fun AdminDashboard(onItemClick: (String) -> Unit) {
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
-                            painter = painterResource(id = R.drawable.ic), // Thay bằng icon hợp lệ
+                            painter = painterResource(id = R.drawable.ic),
                             contentDescription = null,
                             tint = Color(0xFF0288D1),
                             modifier = Modifier.size(24.dp)
@@ -116,7 +109,6 @@ fun AdminDashboard(onItemClick: (String) -> Unit) {
                     Spacer(modifier = Modifier.width(12.dp))
                     Column {
                         Text(text = title, fontSize = 16.sp, fontWeight = FontWeight.Bold)
-                        Text(text = description, fontSize = 14.sp, color = Color.Gray)
                     }
                 }
             }
@@ -124,9 +116,9 @@ fun AdminDashboard(onItemClick: (String) -> Unit) {
     }
 }
 
-
 @Preview(showBackground = true)
 @Composable
 fun PreviewAdminDashboard() {
-    AdminDashboard {}
+    val navController = rememberNavController()
+    AdminDashboard(navController)
 }
