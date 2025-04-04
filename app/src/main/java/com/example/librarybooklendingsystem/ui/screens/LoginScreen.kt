@@ -126,7 +126,7 @@ fun LoginScreen(navController: NavController) {
                                 }
                             }
                         } else {
-                            errorMessage = "Invalid credentials or account not found"
+                            errorMessage = "Email hoặc mật khẩu không đúng"
                         }
                     }
             },

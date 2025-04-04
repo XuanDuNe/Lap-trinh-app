@@ -1,11 +1,12 @@
 package com.example.librarybooklendingsystem.ui.screens
 
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import com.google.firebase.auth.FirebaseAuth
 
 object AuthState {
-    var isLoggedIn by mutableStateOf(false)
+    private val auth = FirebaseAuth.getInstance()
+    
+    val isLoggedIn: Boolean
+        get() = auth.currentUser != null
+
+    fun getCurrentUser() = auth.currentUser
 } 

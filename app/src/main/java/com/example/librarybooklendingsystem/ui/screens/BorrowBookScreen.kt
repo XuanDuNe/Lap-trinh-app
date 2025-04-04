@@ -43,7 +43,7 @@ fun BorrowBookScreen(navController: NavController) {
                     }
                 },
                 navigationIcon = {
-                    IconButton(onClick = { }) {
+                    IconButton(onClick = { navController.navigateUp() }) {
                         Icon(Icons.Filled.KeyboardArrowLeft, contentDescription = " Back ",
                             modifier = Modifier.size(50.dp)
                         )

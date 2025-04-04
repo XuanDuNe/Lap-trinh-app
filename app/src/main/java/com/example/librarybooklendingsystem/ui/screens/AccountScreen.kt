@@ -12,7 +12,7 @@ import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.filled.Share
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -29,6 +29,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.librarybooklendingsystem.R
+import com.google.firebase.auth.FirebaseAuth
 
 @Composable
 fun MainScreen() {
@@ -49,6 +50,21 @@ fun MainScreen() {
 
 @Composable
 fun AccountScreen(navController: NavController?) {
+    val auth = FirebaseAuth.getInstance()
+    val currentUser = auth.currentUser
+
+    LaunchedEffect(currentUser) {
+        if (currentUser == null) {
+            navController?.navigate("login") {
+                popUpTo(0) { inclusive = true }
+            }
+        }
+    }
+
+    if (currentUser == null) {
+        return
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -84,11 +100,16 @@ fun AccountScreen(navController: NavController?) {
                         .background(Color.Gray)
                 )
                 Spacer(modifier = Modifier.height(8.dp))
-                Text("Nguyễn Văn Duy", fontSize = 20.sp, fontWeight = FontWeight.Bold)
-                Text("ID: 123456", fontSize = 16.sp, color = Color.Gray)
+                Text(currentUser.email ?: "Người dùng", fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                Text("ID: ${currentUser.uid}", fontSize = 16.sp, color = Color.Gray)
                 Spacer(modifier = Modifier.height(16.dp))
                 Button(
-                    onClick = { },
+                    onClick = { 
+                        auth.signOut()
+                        navController?.navigate("login") {
+                            popUpTo(0) { inclusive = true }
+                        }
+                    },
                     modifier = Modifier
                         .width(120.dp)
                         .height(40.dp),
