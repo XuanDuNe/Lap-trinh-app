@@ -12,18 +12,14 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.Button
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Scaffold
-<<<<<<< Updated upstream
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavController
-=======
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
->>>>>>> Stashed changes
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
@@ -81,12 +77,9 @@ fun MainScreen() {
             startDestination = "home",
             modifier = Modifier.padding(paddingValues)
         ) {
-<<<<<<< Updated upstream
             composable("home") { HomeScreen(navController) }
             composable("bookDetails") { BookDetailsScreen(navController)}
-=======
             composable("bookDetails") { BookDetailsScreen(navController) }
->>>>>>> Stashed changes
             composable("borrowBook") { BorrowBookScreen(navController) }
             composable("account") { AccountScreen(navController) }
             composable("login") { LoginScreen(navController) }
