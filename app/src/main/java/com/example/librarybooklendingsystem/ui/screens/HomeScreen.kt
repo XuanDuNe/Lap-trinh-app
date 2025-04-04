@@ -1,32 +1,50 @@
 package com.example.librarybooklendingsystem.ui.screens
 
+import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.*
+import androidx.compose.material3.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
+import androidx.lifecycle.viewmodel.compose.viewModel
+import coil.compose.AsyncImage
 import com.example.librarybooklendingsystem.R
+import com.example.librarybooklendingsystem.data.Book
+import com.example.librarybooklendingsystem.ui.viewmodels.BookViewModel
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.foundation.shape.RoundedCornerShape
+import com.example.librarybooklendingsystem.ui.components.CommonHeader
+import com.example.librarybooklendingsystem.ui.viewmodels.BooksUiState
 import kotlinx.coroutines.delay
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun HomeScreen(navController: NavController) {
+fun HomeScreen(
+    navController: NavController,
+    viewModel: BookViewModel = viewModel()
+) {
     val scrollState = rememberScrollState()
     var searchQuery by remember { mutableStateOf("") }
     var currentBannerIndex by remember { mutableStateOf(0) }
@@ -34,8 +52,8 @@ fun HomeScreen(navController: NavController) {
     // Danh sách các banner
     val banners = listOf(
         R.drawable.logouth,
-        R.drawable.yeu, // Thay bằng hình ảnh thực tế của bạn
-        R.drawable.yeumbangmatgiuembangtim  // Thay bằng hình ảnh thực tế của bạn
+        R.drawable.yeu,
+        R.drawable.yeumbangmatgiuembangtim
     )
 
     // Tự động chuyển đổi banner mỗi 3 giây
@@ -46,57 +64,156 @@ fun HomeScreen(navController: NavController) {
         }
     }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                modifier = Modifier.height(100.dp),
-                backgroundColor =(Color(0xFF0B8FAC))
-            ) {
-                OutlinedTextField(
-                    value = searchQuery,
-                    onValueChange = { searchQuery = it },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp)
-                        .background(color = Color.White, shape = RoundedCornerShape(25.dp)),
-                    placeholder = { Text("Nhập từ khóa tìm kiếm") },
-                    leadingIcon = {
-                        Icon(
-                            imageVector = Icons.Default.Search,
-                            contentDescription = "Search Icon"
-                        )
-                    },
-                    shape = RoundedCornerShape(25.dp)
+    // Collect UI state
+    val uiState by viewModel.uiState.collectAsState()
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color.White)
+    ) {
+        CommonHeader(
+            title = "Trang chủ",
+            onBackClick = { navController.navigateUp() },
+            showShareButton = false
+        )
+
+        // Search Bar
+        OutlinedTextField(
+            value = searchQuery,
+            onValueChange = { searchQuery = it },
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp)
+                .padding(top = 16.dp),
+            placeholder = { Text("Tìm kiếm sách...") },
+            leadingIcon = {
+                Icon(
+                    Icons.Default.Search,
+                    contentDescription = "Search",
+                    tint = Color(0xFF0093AB)
                 )
-            }
-        },
-    ) { paddingValues ->
+            },
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedBorderColor = Color(0xFF0093AB),
+                unfocusedBorderColor = Color.Gray,
+            ),
+            shape = RoundedCornerShape(12.dp),
+            singleLine = true
+        )
+
+        // Content
         Column(
             modifier = Modifier
-                .padding(paddingValues)
-                .verticalScroll(scrollState)
+                .fillMaxWidth()
+                .padding(16.dp)
         ) {
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(200.dp)
-                    .padding(16.dp),
-                elevation = 4.dp
-            ) {
-                Image(
-                    painter = painterResource(id = banners[currentBannerIndex]),
-                    contentDescription = "Banner",
-                    contentScale = ContentScale.Crop
-                )
+            when (uiState) {
+                is BooksUiState.Loading -> {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        CircularProgressIndicator()
+                    }
+                }
+                is BooksUiState.Error -> {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.Center
+                        ) {
+                            Text(
+                                text = (uiState as BooksUiState.Error).message,
+                                style = MaterialTheme.typography.bodyLarge,
+                                color = MaterialTheme.colorScheme.error
+                            )
+                            Spacer(modifier = Modifier.height(16.dp))
+                            Button(onClick = { viewModel.loadBooks() }) {
+                                Text("Thử lại")
+                            }
+                        }
+                    }
+                }
+                is BooksUiState.Success -> {
+                    val books = (uiState as BooksUiState.Success).books
+                    if (books.isEmpty()) {
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.Center
+                            ) {
+                                Text(
+                                    text = "Không có sách nào",
+                                    style = MaterialTheme.typography.headlineMedium
+                                )
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Button(onClick = { viewModel.loadBooks() }) {
+                                    Text("Tải lại")
+                                }
+                            }
+                        }
+                    } else {
+                        Column(
+                            modifier = Modifier
+                                .verticalScroll(scrollState)
+                        ) {
+                            // Banner
+                            Card(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(200.dp)
+                                    .padding(16.dp),
+                                colors = CardDefaults.cardColors(
+                                    containerColor = Color.White
+                                ),
+                                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+                            ) {
+                                Image(
+                                    painter = painterResource(id = banners[currentBannerIndex]),
+                                    contentDescription = "Banner",
+                                    contentScale = ContentScale.Crop,
+                                    modifier = Modifier.fillMaxSize()
+                                )
+                            }
+
+                            // Top 10 đọc nhiều
+                            SectionHeader(title = "Top 10 đọc nhiều")
+                            LazyRow(
+                                contentPadding = PaddingValues(horizontal = 16.dp),
+                                horizontalArrangement = Arrangement.spacedBy(16.dp)
+                            ) {
+                                items(books.take(10)) { book ->
+                                    FirebaseBookItem(
+                                        navController = navController,
+                                        book = book
+                                    )
+                                }
+                            }
+
+                            // Sách mới
+                            SectionHeader(title = "Sách mới")
+                            LazyRow(
+                                contentPadding = PaddingValues(horizontal = 16.dp),
+                                horizontalArrangement = Arrangement.spacedBy(16.dp)
+                            ) {
+                                items(books.sortedByDescending { it.createdAt }.take(10)) { book ->
+                                    FirebaseBookItem(
+                                        navController = navController,
+                                        book = book
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
             }
-
-            // Top 10 đọc nhiều
-            SectionHeader(title = "Top 10 đọc nhiều")
-            BookList(navController = navController)
-
-            // Sách mới
-            SectionHeader(title = "Sách mới")
-            BookList(navController = navController)
         }
     }
 }
@@ -112,39 +229,25 @@ fun SectionHeader(title: String) {
 }
 
 @Composable
-fun BookList(navController: NavController) {
-    LazyRow(
-        contentPadding = PaddingValues(horizontal = 16.dp),
-        horizontalArrangement = Arrangement.spacedBy(16.dp)
-    ) {
-        items(3) { index ->
-            BookItem(
-                navController = navController,
-                bookTitle = "Tên sách $index",
-                bookImage = R.drawable.logouth
-            )
-        }
-    }
-}
-
-@Composable
-fun BookItem(
+fun FirebaseBookItem(
     navController: NavController,
-    bookTitle: String,
-    bookImage: Int
+    book: Book
 ) {
     Card(
         modifier = Modifier
             .width(120.dp)
             .height(180.dp)
             .clickable { 
-                navController.navigate("bookDetails")
+                navController.navigate("bookDetails/${book.id}")
             },
-        elevation = 4.dp
+        colors = CardDefaults.cardColors(
+            containerColor = Color.White
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
     ) {
         Column {
-            Image(
-                painter = painterResource(id = bookImage),
+            AsyncImage(
+                model = book.coverUrl,
                 contentDescription = "Book Cover",
                 modifier = Modifier
                     .fillMaxWidth()
@@ -152,7 +255,7 @@ fun BookItem(
                 contentScale = ContentScale.Crop
             )
             Text(
-                text = bookTitle,
+                text = book.title,
                 modifier = Modifier.padding(8.dp),
                 maxLines = 2
             )
@@ -169,8 +272,22 @@ fun HomeScreenPreview() {
 
 @Preview(showBackground = true)
 @Composable
-fun BookItemPreview() {
-    BookItem(navController = rememberNavController(), bookTitle = "Tên sách 1", bookImage = R.drawable.logouth)
+fun FirebaseBookItemPreview() {
+    val book = Book(
+        id = "1",
+        title = "Sample Book",
+        author = "Author",
+        category = "Category",
+        status = "Có sẵn",
+        coverUrl = "",
+        description = "",
+        createdAt = java.util.Date(),
+        borrowCount = 0
+    )
+    FirebaseBookItem(
+        navController = rememberNavController(),
+        book = book
+    )
 }
 
 @Preview(showBackground = true)
@@ -178,4 +295,6 @@ fun BookItemPreview() {
 fun SectionHeaderPreview() {
     SectionHeader(title = "Top 10 đọc nhiều")
 }
+
+
 

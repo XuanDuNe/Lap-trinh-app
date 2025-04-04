@@ -1,17 +1,12 @@
 package com.example.librarybooklendingsystem.ui.screens
 
-import androidx.compose.foundation.background
-import androidx.compose.material.AlertDialog
-import androidx.compose.material.Button
-import androidx.compose.material.Text
-import androidx.compose.material.TextButton
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
-import androidx.compose.material.ButtonDefaults
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LoginRequiredDialog(
     onDismiss: () -> Unit,
@@ -28,7 +23,7 @@ fun LoginRequiredDialog(
                     navController.navigate("login")
                 },
                 colors = ButtonDefaults.buttonColors(
-                    backgroundColor = Color(0xFF0093AB)
+                    containerColor = Color(0xFF0093AB)
                 )
             ) {
                 Text("Đăng nhập", color = Color.White)

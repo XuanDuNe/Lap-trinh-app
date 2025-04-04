@@ -1,20 +1,17 @@
 package com.example.librarybooklendingsystem.ui.screens
 
 import androidx.compose.foundation.layout.size
-import androidx.compose.material.BottomNavigation
-import androidx.compose.material.BottomNavigationItem
-import androidx.compose.material.Icon
-import androidx.compose.material.Text
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
+import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import androidx.compose.runtime.collectAsState
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BottomNavigationBar(navController: NavController) {
     var selectedItem by remember { mutableStateOf(0) }
@@ -28,12 +25,12 @@ fun BottomNavigationBar(navController: NavController) {
         )
     }
 
-    BottomNavigation(
-        backgroundColor = Color(0xFFD3D3D3),
+    NavigationBar(
+        containerColor = Color(0xFFD3D3D3),
         contentColor = Color(0xFF0B8FAC)
     ) {
         // Trang chủ
-        BottomNavigationItem(
+        NavigationBarItem(
             icon = {
                 Icon(
                     Icons.Filled.Home,
@@ -50,7 +47,7 @@ fun BottomNavigationBar(navController: NavController) {
         )
 
         // Danh mục
-        BottomNavigationItem(
+        NavigationBarItem(
             icon = {
                 Icon(
                     Icons.Filled.List,
@@ -67,7 +64,7 @@ fun BottomNavigationBar(navController: NavController) {
         )
 
         // Cá nhân
-        BottomNavigationItem(
+        NavigationBarItem(
             icon = {
                 Icon(
                     Icons.Filled.Person,
@@ -89,10 +86,10 @@ fun BottomNavigationBar(navController: NavController) {
 
         // Thống kê (chỉ hiển thị cho admin)
         if (userRole == "admin") {
-            BottomNavigationItem(
+            NavigationBarItem(
                 icon = {
                     Icon(
-                        Icons.Filled.BarChart,
+                        Icons.Filled.Settings,
                         contentDescription = "Thống kê",
                         modifier = Modifier.size(32.dp)
                     )

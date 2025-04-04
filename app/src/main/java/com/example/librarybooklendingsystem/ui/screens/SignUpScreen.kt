@@ -5,8 +5,8 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.Visibility
-import androidx.compose.material.icons.rounded.VisibilityOff
+import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -25,6 +25,7 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.firestore.FirebaseFirestore
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SignUpScreen(navController: NavController) {
     val auth = FirebaseAuth.getInstance()
@@ -87,7 +88,7 @@ fun SignUpScreen(navController: NavController) {
             trailingIcon = {
                 IconButton(onClick = { passwordVisible = !passwordVisible }) {
                     Icon(
-                        imageVector = if (passwordVisible) Icons.Rounded.Visibility else Icons.Rounded.VisibilityOff,
+                        imageVector = if (passwordVisible) Icons.Filled.Person else Icons.Filled.Lock,
                         contentDescription = if (passwordVisible) "Hide password" else "Show password",
                         tint = Color(0xFF0093AB)
                     )
@@ -107,7 +108,7 @@ fun SignUpScreen(navController: NavController) {
             trailingIcon = {
                 IconButton(onClick = { confirmPasswordVisible = !confirmPasswordVisible }) {
                     Icon(
-                        imageVector = if (confirmPasswordVisible) Icons.Rounded.Visibility else Icons.Rounded.VisibilityOff,
+                        imageVector = if (confirmPasswordVisible) Icons.Filled.Person else Icons.Filled.Lock,
                         contentDescription = if (confirmPasswordVisible) "Hide password" else "Show password",
                         tint = Color(0xFF0093AB)
                     )

@@ -1,5 +1,6 @@
 package com.example.librarybooklendingsystem.ui.screens
 
+import com.example.librarybooklendingsystem.data.Book
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 

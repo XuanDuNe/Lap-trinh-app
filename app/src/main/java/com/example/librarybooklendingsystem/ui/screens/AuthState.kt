@@ -4,11 +4,16 @@ import android.content.Context
 import android.content.SharedPreferences
 import android.widget.Toast
 import androidx.compose.runtime.mutableStateOf
+import com.example.librarybooklendingsystem.data.FirebaseManager
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 object AuthState {
     private val auth = FirebaseAuth.getInstance()
@@ -17,6 +22,9 @@ object AuthState {
     private val _currentUserRole = MutableStateFlow<String?>(null)
     private val _isAdmin = MutableStateFlow(false)
     private lateinit var prefs: SharedPreferences
+
+    val currentUserId: String?
+        get() = auth.currentUser?.uid
 
     fun init(context: Context) {
         prefs = context.getSharedPreferences("auth_prefs", Context.MODE_PRIVATE)
@@ -51,30 +59,26 @@ object AuthState {
         _isLoading.value = true
         val currentUser = auth.currentUser
         if (currentUser != null) {
-            val userRef = db.collection("users").document(currentUser.uid)
-            userRef.get()
-                .addOnSuccessListener { document ->
-                    if (document.exists()) {
-                        val role = document.getString("role") ?: "user"
-                        _currentUserRole.value = role
-                        _isAdmin.value = role == "admin"
-                        saveAuthState(role, role == "admin")
-                        onComplete(true)
-                    } else {
-                        _currentUserRole.value = "user"
-                        _isAdmin.value = false
-                        saveAuthState("user", false)
-                        onComplete(false)
-                    }
+            CoroutineScope(Dispatchers.IO).launch {
+                val role = FirebaseManager.getUserRole(currentUser.uid)
+                if (role != null) {
+                    _currentUserRole.value = role
+                    _isAdmin.value = role == "admin"
+                    saveAuthState(role, role == "admin")
                     _isLoading.value = false
-                }
-                .addOnFailureListener {
+                    withContext(Dispatchers.Main) {
+                        onComplete(true)
+                    }
+                } else {
                     _currentUserRole.value = "user"
                     _isAdmin.value = false
                     saveAuthState("user", false)
                     _isLoading.value = false
-                    onComplete(false)
+                    withContext(Dispatchers.Main) {
+                        onComplete(false)
+                    }
                 }
+            }
         } else {
             _currentUserRole.value = null
             _isAdmin.value = false
@@ -157,20 +161,24 @@ object AuthState {
                 if (task.isSuccessful) {
                     val user = auth.currentUser
                     if (user != null) {
-                        // Tạo document user với role mặc định là "user"
-                        val userRef = db.collection("users").document(user.uid)
-                        userRef.set(mapOf("role" to "user"))
-                            .addOnSuccessListener {
+                        // Sử dụng FirebaseManager để tạo user
+                        CoroutineScope(Dispatchers.IO).launch {
+                            val success = FirebaseManager.createUser(user.uid, email)
+                            if (success) {
                                 _currentUserRole.value = "user"
                                 _isAdmin.value = false
                                 _isLoading.value = false
-                                Toast.makeText(context, "Tạo tài khoản thành công", Toast.LENGTH_SHORT).show()
-                                onSuccess()
-                            }
-                            .addOnFailureListener { e ->
+                                withContext(Dispatchers.Main) {
+                                    Toast.makeText(context, "Tạo tài khoản thành công", Toast.LENGTH_SHORT).show()
+                                    onSuccess()
+                                }
+                            } else {
                                 _isLoading.value = false
-                                onError("Lỗi tạo tài khoản: ${e.message}")
+                                withContext(Dispatchers.Main) {
+                                    onError("Lỗi tạo tài khoản")
+                                }
                             }
+                        }
                     }
                 } else {
                     _isLoading.value = false
@@ -186,41 +194,33 @@ object AuthState {
                 if (task.isSuccessful) {
                     val user = auth.currentUser
                     if (user != null) {
-                        // Tạo document trong collection users với role là admin
-                        val userRef = db.collection("users").document(user.uid)
-                        val userData = hashMapOf(
-                            "role" to "admin",
-                            "email" to email,
-                            "createdAt" to System.currentTimeMillis()
-                        )
-                        
-                        userRef.set(userData)
-                            .addOnSuccessListener {
-                                // Tạo document trong collection admin
-                                val adminRef = db.collection("admin").document(user.uid)
-                                val adminData = hashMapOf(
-                                    "email" to email,
-                                    "createdAt" to System.currentTimeMillis(),
-                                    "isActive" to true
-                                )
-                                
-                                adminRef.set(adminData)
-                                    .addOnSuccessListener {
-                                        _currentUserRole.value = "admin"
-                                        _isAdmin.value = true
-                                        _isLoading.value = false
+                        CoroutineScope(Dispatchers.IO).launch {
+                            // Tạo user với role admin
+                            val userSuccess = FirebaseManager.createUser(user.uid, email, "admin")
+                            if (userSuccess) {
+                                // Tạo admin record
+                                val adminSuccess = FirebaseManager.createAdmin(user.uid, email)
+                                if (adminSuccess) {
+                                    _currentUserRole.value = "admin"
+                                    _isAdmin.value = true
+                                    _isLoading.value = false
+                                    withContext(Dispatchers.Main) {
                                         Toast.makeText(context, "Tài khoản admin đã được tạo thành công!", Toast.LENGTH_LONG).show()
                                         onSuccess()
                                     }
-                                    .addOnFailureListener { e ->
-                                        _isLoading.value = false
-                                        onError("Lỗi khi tạo thông tin admin: ${e.message}")
+                                } else {
+                                    _isLoading.value = false
+                                    withContext(Dispatchers.Main) {
+                                        onError("Lỗi khi tạo thông tin admin")
                                     }
-                            }
-                            .addOnFailureListener { e ->
+                                }
+                            } else {
                                 _isLoading.value = false
-                                onError("Lỗi khi tạo quyền admin: ${e.message}")
+                                withContext(Dispatchers.Main) {
+                                    onError("Lỗi khi tạo quyền admin")
+                                }
                             }
+                        }
                     }
                 } else {
                     _isLoading.value = false

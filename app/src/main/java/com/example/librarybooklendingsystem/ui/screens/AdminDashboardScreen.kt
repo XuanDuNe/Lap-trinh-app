@@ -12,6 +12,10 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.*
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -49,9 +53,13 @@ fun AdminDashboardScreen(navController: NavController) {
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(100.dp),
-                backgroundColor = Color(0xFF0288D1),
+                colors = CardDefaults.cardColors(
+                    containerColor = Color(0xFF0288D1)
+                ),
                 shape = RoundedCornerShape(8.dp),
-                elevation = 5.dp
+                elevation = CardDefaults.cardElevation(
+                    defaultElevation = 5.dp
+                )
             ) {
                 Row(
                     modifier = Modifier
@@ -100,7 +108,12 @@ fun AdminDashboardScreen(navController: NavController) {
                         }
                     },
                 shape = RoundedCornerShape(12.dp),
-                elevation = 6.dp
+                elevation = CardDefaults.cardElevation(
+                    defaultElevation = 6.dp
+                ),
+                colors = CardDefaults.cardColors(
+                    containerColor = Color.White
+                )
             ) {
                 Row(
                     modifier = Modifier
