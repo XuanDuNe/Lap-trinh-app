@@ -106,7 +106,7 @@ fun MainScreen() {
     ) { paddingValues ->
         NavHost(
             navController = navController,
-            startDestination = "login",
+            startDestination = "home",
             modifier = Modifier.padding(paddingValues)
         ) {
             composable("login") { LoginScreen(navController) }
