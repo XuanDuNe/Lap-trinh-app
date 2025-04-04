@@ -5,11 +5,25 @@ import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material.Button
+import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Scaffold
+<<<<<<< Updated upstream
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavController
+=======
+import androidx.compose.material.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
+>>>>>>> Stashed changes
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
@@ -28,16 +42,19 @@ import com.google.firebase.firestore.FirebaseFirestore
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        val db = FirebaseFirestore.getInstance()
+
         if (FirebaseApp.getApps(this).isNotEmpty()) {
             Log.d("FirebaseCheck", "Firebase đã kết nối thành công!")
         } else {
             Log.e("FirebaseCheck", "Firebase chưa kết nối!")
         }
         setContent {
-            MainScreen()
+                MainScreen()
+            }
         }
     }
-}
 
 class MyApplication : Application() {
     override fun onCreate() {
@@ -64,8 +81,12 @@ fun MainScreen() {
             startDestination = "home",
             modifier = Modifier.padding(paddingValues)
         ) {
+<<<<<<< Updated upstream
             composable("home") { HomeScreen(navController) }
             composable("bookDetails") { BookDetailsScreen(navController)}
+=======
+            composable("bookDetails") { BookDetailsScreen(navController) }
+>>>>>>> Stashed changes
             composable("borrowBook") { BorrowBookScreen(navController) }
             composable("account") { AccountScreen(navController) }
             composable("login") { LoginScreen(navController) }
