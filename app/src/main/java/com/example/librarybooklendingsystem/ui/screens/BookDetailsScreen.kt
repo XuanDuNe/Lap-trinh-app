@@ -11,7 +11,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.outlined.FavoriteBorder
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -27,6 +27,15 @@ import androidx.navigation.NavController
 import com.example.librarybooklendingsystem.R
 @Composable
 fun BookDetailsScreen(navController: NavController) {
+    var showLoginDialog by remember { mutableStateOf(false) }
+
+    if (showLoginDialog) {
+        LoginRequiredDialog(
+            onDismiss = { showLoginDialog = false },
+            navController = navController
+        )
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -98,7 +107,13 @@ fun BookDetailsScreen(navController: NavController) {
                 Spacer(modifier = Modifier.height(16.dp))
 
                 Button(
-                    onClick = { navController.navigate("borrowbook") },
+                    onClick = { 
+                        if (AuthState.isLoggedIn) {
+                            navController.navigate("borrowbook")
+                        } else {
+                            showLoginDialog = true
+                        }
+                    },
                     modifier = Modifier
                         .fillMaxWidth(0.5f)
                         .height(50.dp),

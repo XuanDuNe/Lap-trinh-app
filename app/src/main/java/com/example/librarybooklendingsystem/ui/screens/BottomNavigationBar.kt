@@ -9,11 +9,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.filled.Person
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
@@ -22,10 +18,18 @@ import androidx.navigation.NavController
 @Composable
 fun BottomNavigationBar(navController: NavController) {
     var selectedItem by remember { mutableStateOf(0) }
+    var showLoginDialog by remember { mutableStateOf(false) }
+
+    if (showLoginDialog) {
+        LoginRequiredDialog(
+            onDismiss = { showLoginDialog = false },
+            navController = navController
+        )
+    }
 
     BottomNavigation(
         backgroundColor = Color(0xFFD3D3D3),
-        contentColor = Color(0xFF008080)
+        contentColor = Color(0xFF0B8FAC)
     ) {
         // Trang chủ
         BottomNavigationItem(
@@ -74,8 +78,14 @@ fun BottomNavigationBar(navController: NavController) {
             selected = selectedItem == 2,
             onClick = {
                 selectedItem = 2
-                navController.navigate("account")
+                if (AuthState.isLoggedIn) {
+                    navController.navigate("account")
+                } else {
+                    showLoginDialog = true
+                }
             }
         )
     }
 }
+
+

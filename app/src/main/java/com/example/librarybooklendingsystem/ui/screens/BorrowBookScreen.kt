@@ -55,7 +55,7 @@ fun BorrowBookScreen(navController: NavController) {
                             modifier = Modifier.size(35.dp))
                     }
                 },
-                backgroundColor = Color(0xFF0288D1),
+                backgroundColor = Color(0xFF0B8FAC),
                 contentColor = Color.White,
                 modifier = Modifier.height(100.dp)
             )

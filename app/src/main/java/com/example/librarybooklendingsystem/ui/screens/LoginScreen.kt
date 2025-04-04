@@ -31,16 +31,17 @@ fun LoginScreen(navController: NavController) {
             .fillMaxSize()
             .padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
+        verticalArrangement = Arrangement.Top
     ) {
         // Logo
         Image(
             painter = painterResource(id = R.drawable.logouth),
             contentDescription = "Logo",
             modifier = Modifier
-                .size(250.dp)
-                .padding(bottom = 16.dp)
+                .size(200.dp)
+                .padding(top = 32.dp, bottom = 16.dp)
         )
+
         Text(
             text = "Login",
             style = MaterialTheme.typography.headlineLarge,
@@ -92,11 +93,17 @@ fun LoginScreen(navController: NavController) {
         }
 
         Button(
-            onClick = { /* TODO: Handle login */ },
+            onClick = { 
+                // TODO: Thêm logic xác thực thực tế
+                AuthState.isLoggedIn = true
+                navController.navigate("home") {
+                    popUpTo("login") { inclusive = true }
+                }
+            },
             modifier = Modifier
                 .fillMaxWidth()
-                .height(55.dp)
-                .padding(horizontal = 16.dp),
+                .height(80.dp)
+                .padding(horizontal = 16.dp, vertical = 16.dp),
             colors = ButtonDefaults.buttonColors(
                 containerColor = Color(0xFF0093AB)
             ),
@@ -109,7 +116,7 @@ fun LoginScreen(navController: NavController) {
         }
 
         Row(
-            modifier = Modifier.padding(top = 16.dp),
+            modifier = Modifier.padding(top = 8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text("Don't have an account? ")
