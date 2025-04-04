@@ -79,7 +79,7 @@ fun AccountScreen(navController: NavController?) {
                         Icon(Icons.Filled.Share, contentDescription = "Chia sẻ", modifier = Modifier.size(35.dp))
                     }
                 },
-                backgroundColor = Color(0xFF0288D1),
+                backgroundColor = Color(0xFF0093AB),
                 contentColor = Color.White,
                 modifier = Modifier.height(100.dp)
             )
@@ -114,7 +114,7 @@ fun AccountScreen(navController: NavController?) {
                         .width(120.dp)
                         .height(40.dp),
                     shape = RoundedCornerShape(20.dp),
-                    colors = ButtonDefaults.buttonColors(backgroundColor = Color(0xFF0288D1))
+                    colors = ButtonDefaults.buttonColors(backgroundColor = Color(0xFF0093AB))
                 ) {
                     Text("Đăng xuất", color = Color.White)
                 }

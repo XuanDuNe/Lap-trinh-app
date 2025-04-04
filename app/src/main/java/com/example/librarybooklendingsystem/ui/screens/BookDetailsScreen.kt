@@ -52,7 +52,7 @@ fun BookDetailsScreen(navController: NavController) {
                         )
                     }
                 },
-                backgroundColor = Color(0xFF0288D1),
+                backgroundColor = Color(0xFF0093AB),
                 contentColor = Color.White,
                 navigationIcon = {
                     IconButton(onClick = { navController.navigateUp() }) {
@@ -118,7 +118,7 @@ fun BookDetailsScreen(navController: NavController) {
                         .fillMaxWidth(0.5f)
                         .height(50.dp),
                     shape = RoundedCornerShape(20.dp),
-                    colors = ButtonDefaults.buttonColors(backgroundColor = Color(0xFF0288D1)),
+                    colors = ButtonDefaults.buttonColors(backgroundColor = Color(0xFF0093AB)),
                     border = BorderStroke(1.dp, Color.White)
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {

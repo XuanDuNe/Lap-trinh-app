@@ -1,6 +1,7 @@
 package com.example.librarybooklendingsystem.ui.screens
 
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.*
@@ -125,6 +126,7 @@ fun BorrowBookScreen(navController: NavController) {
                     modifier = Modifier
                         .width(250.dp)
                         .height(60.dp)
+                        .background(Color(0xFF0093AB))
                 ) {
                     Text(text = "Xác nhận", fontSize = 20.sp)
                 }
