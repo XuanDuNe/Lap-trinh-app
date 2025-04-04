@@ -6,19 +6,20 @@ import androidx.compose.material.BottomNavigationItem
 import androidx.compose.material.Icon
 import androidx.compose.material.Text
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.List
-import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import androidx.compose.runtime.collectAsState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
 @Composable
 fun BottomNavigationBar(navController: NavController) {
     var selectedItem by remember { mutableStateOf(0) }
     var showLoginDialog by remember { mutableStateOf(false) }
+    val userRole by AuthState.currentUserRole.collectAsState(initial = null)
 
     if (showLoginDialog) {
         LoginRequiredDialog(
@@ -85,6 +86,25 @@ fun BottomNavigationBar(navController: NavController) {
                 }
             }
         )
+
+        // Thống kê (chỉ hiển thị cho admin)
+        if (userRole == "admin") {
+            BottomNavigationItem(
+                icon = {
+                    Icon(
+                        Icons.Filled.BarChart,
+                        contentDescription = "Thống kê",
+                        modifier = Modifier.size(32.dp)
+                    )
+                },
+                label = { Text("Thống kê") },
+                selected = selectedItem == 3,
+                onClick = {
+                    selectedItem = 3
+                    navController.navigate("admin_dashboard")
+                }
+            )
+        }
     }
 }
 

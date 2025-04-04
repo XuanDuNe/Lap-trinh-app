@@ -12,6 +12,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
@@ -22,10 +23,13 @@ import androidx.navigation.compose.rememberNavController
 import com.example.librarybooklendingsystem.R
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
+import com.google.firebase.firestore.FirebaseFirestore
 
 @Composable
 fun SignUpScreen(navController: NavController) {
     val auth = FirebaseAuth.getInstance()
+    val db = FirebaseFirestore.getInstance()
+    val context = LocalContext.current
 
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
@@ -151,10 +155,23 @@ fun SignUpScreen(navController: NavController) {
                         if (task.isSuccessful) {
                             val user: FirebaseUser? = auth.currentUser
                             if (user != null) {
-                                // Successfully signed up, navigate to login screen
-                                navController.navigate("login") {
-                                    popUpTo("signup") { inclusive = true }
-                                }
+                                // Lưu thông tin user role vào Firestore
+                                val userRef = db.collection("users").document(user.uid)
+                                userRef.set(mapOf("role" to "user"))
+                                    .addOnSuccessListener {
+                                        Toast.makeText(
+                                            context,
+                                            "Account created successfully!",
+                                            Toast.LENGTH_SHORT
+                                        ).show()
+                                        // Navigate to login screen after successful sign-up
+                                        navController.navigate("login") {
+                                            popUpTo("signup") { inclusive = true }
+                                        }
+                                    }
+                                    .addOnFailureListener { e ->
+                                        errorMessage = "Error saving user data: ${e.localizedMessage}"
+                                    }
                             }
                         } else {
                             errorMessage = task.exception?.localizedMessage ?: "Sign up failed. Please try again."
@@ -191,3 +208,4 @@ fun SignUpScreen(navController: NavController) {
         }
     }
 }
+

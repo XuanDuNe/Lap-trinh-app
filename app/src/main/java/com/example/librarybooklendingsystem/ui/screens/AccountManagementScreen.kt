@@ -6,8 +6,9 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.KeyboardArrowLeft
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -20,28 +21,12 @@ import com.example.librarybooklendingsystem.R
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun BorrowedBooksStatsScreen(navController: NavController) {
-    val bookCategories = listOf(
-        "Thể loại 1" to 5,
-        "Thể loại 2" to 5,
-        "Thể loại 3" to 5,
-        "Thể loại 4" to 5,
-        "Thể loại 1" to 5,
-        "Thể loại 2" to 5,
-        "Thể loại 3" to 5,
-        "Thể loại 4" to 5,
-        "Thể loại 1" to 5,
-        "Thể loại 2" to 5,
-        "Thể loại 3" to 5,
-        "Thể loại 4" to 5,
-        "Thể loại 1" to 5,
-        "Thể loại 2" to 5,
-        "Thể loại 3" to 5,
-        "Thể loại 4" to 5,
-        "Thể loại 1" to 5,
-        "Thể loại 2" to 5,
-        "Thể loại 3" to 5,
-        "Thể loại 4" to 5
+fun AccountManagementScreen(navController: NavController) {
+    val accountStats = listOf(
+        "Tài khoản admin" to 5,
+        "Tài khoản người dùng" to 50,
+        "Tài khoản bị khóa" to 2,
+        "Tài khoản đang hoạt động" to 53
     )
 
     Scaffold(
@@ -54,7 +39,7 @@ fun BorrowedBooksStatsScreen(navController: NavController) {
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
-                            text = "Thống kê mượn sách",
+                            text = "Quản lý tài khoản",
                             fontSize = 26.sp,
                             fontWeight = FontWeight.Bold,
                             color = Color.White,
@@ -104,20 +89,20 @@ fun BorrowedBooksStatsScreen(navController: NavController) {
                     verticalArrangement = Arrangement.Center
                 ) {
                     Icon(
-                        painter = painterResource(R.drawable.thongke),
-                        contentDescription = "Stats Icon",
+                        Icons.Default.Person,
+                        contentDescription = "Account Icon",
                         modifier = Modifier.size(40.dp),
                         tint = Color(0xFF0288D1)
                     )
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
-                        text = "Thống kê tình hình mượn sách theo thể loại",
+                        text = "Thống kê tài khoản người dùng",
                         fontSize = 16.sp,
                         color = Color(0xFF0288D1)
                     )
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
-                        text = "Tổng số lượt mượn: 20",
+                        text = "Tổng số tài khoản: 55",
                         fontSize = 14.sp,
                         fontWeight = FontWeight.Bold
                     )
@@ -127,7 +112,7 @@ fun BorrowedBooksStatsScreen(navController: NavController) {
             LazyColumn(
                 modifier = Modifier.fillMaxSize()
             ) {
-                items(bookCategories) { category ->
+                items(accountStats) { stat ->
                     Card(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -143,12 +128,12 @@ fun BorrowedBooksStatsScreen(navController: NavController) {
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(
-                                text = category.first,
+                                text = stat.first,
                                 fontSize = 16.sp,
                                 color = MaterialTheme.colorScheme.onSurface
                             )
                             Text(
-                                text = "${category.second} lượt mượn",
+                                text = "${stat.second}",
                                 fontSize = 16.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.primary
@@ -159,4 +144,4 @@ fun BorrowedBooksStatsScreen(navController: NavController) {
             }
         }
     }
-}
+} 

@@ -12,6 +12,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
@@ -20,16 +21,17 @@ import androidx.navigation.NavController
 import com.example.librarybooklendingsystem.R
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
+import com.google.firebase.firestore.FirebaseFirestore
 
 @Composable
 fun LoginScreen(navController: NavController) {
-    val auth = FirebaseAuth.getInstance()
+    val context = LocalContext.current
+    val authState = AuthState
+    val isAdmin by authState.isAdmin.collectAsState()
 
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
-    var confirmPassword by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
-    var confirmPasswordVisible by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf("") }
 
     Column(
@@ -114,21 +116,27 @@ fun LoginScreen(navController: NavController) {
                     errorMessage = "Vui lòng nhập đầy đủ thông tin đăng nhập"
                     return@Button
                 }
-                // Firebase Auth sign-in logic
-                auth.signInWithEmailAndPassword(email, password)
-                    .addOnCompleteListener { task ->
-                        if (task.isSuccessful) {
-                            val user: FirebaseUser? = auth.currentUser
-                            if (user != null) {
-                                // Successfully logged in
-                                navController.navigate("home") {
-                                    popUpTo("login") { inclusive = true }
-                                }
+
+                AuthState.signIn(
+                    email = email,
+                    password = password,
+                    context = context,
+                    onSuccess = {
+                        // Kiểm tra role và điều hướng
+                        if (isAdmin) {
+                            navController.navigate("admin_dashboard") {
+                                popUpTo("login") { inclusive = true }
                             }
                         } else {
-                            errorMessage = "Email hoặc mật khẩu không đúng"
+                            navController.navigate("home") {
+                                popUpTo("login") { inclusive = true }
+                            }
                         }
+                    },
+                    onError = { error ->
+                        errorMessage = error
                     }
+                )
             },
             modifier = Modifier
                 .fillMaxWidth()
@@ -139,10 +147,14 @@ fun LoginScreen(navController: NavController) {
             ),
             shape = RoundedCornerShape(12.dp)
         ) {
-            Text(
-                "Sign In",
-                style = MaterialTheme.typography.bodyLarge
-            )
+            if (authState.isLoading) {
+                CircularProgressIndicator(color = Color.White)
+            } else {
+                Text(
+                    "Sign In",
+                    style = MaterialTheme.typography.bodyLarge
+                )
+            }
         }
 
         Row(
@@ -159,5 +171,3 @@ fun LoginScreen(navController: NavController) {
         }
     }
 }
-
-

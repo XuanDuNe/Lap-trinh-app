@@ -28,6 +28,11 @@
             </intent-filter>
         </activity>
 
+        <activity
+            android:name=".ui.screens.CreateAdminAccount"
+            android:exported="true"
+            android:label="Create Admin Account" />
+
         <!-- Cấu hình Firebase Authentication (Google Sign-In) -->
         <activity
             android:name="com.google.android.gms.auth.api.signin.internal.SignInHubActivity"

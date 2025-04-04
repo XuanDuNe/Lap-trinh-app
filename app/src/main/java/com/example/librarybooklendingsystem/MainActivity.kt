@@ -1,5 +1,4 @@
 package com.example.librarybooklendingsystem
-
 import android.app.Application
 import android.os.Bundle
 import android.util.Log
@@ -21,14 +20,22 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.example.librarybooklendingsystem.ui.screens.AccountManagementScreen
 import com.example.librarybooklendingsystem.ui.screens.AccountScreen
-import com.example.librarybooklendingsystem.ui.screens.AdminDashboard
+import com.example.librarybooklendingsystem.ui.screens.AdminDashboardScreen
+import com.example.librarybooklendingsystem.ui.screens.AuthState
 import com.example.librarybooklendingsystem.ui.screens.BorrowBookScreen
 import com.example.librarybooklendingsystem.ui.screens.BookDetailsScreen
+import com.example.librarybooklendingsystem.ui.screens.BorrowedBooksStatsScreen
 import com.example.librarybooklendingsystem.ui.screens.BottomNavigationBar
+import com.example.librarybooklendingsystem.ui.screens.CreateAdminScreen
 import com.example.librarybooklendingsystem.ui.screens.HomeScreen
+import com.example.librarybooklendingsystem.ui.screens.LibraryStatsScreen
 import com.example.librarybooklendingsystem.ui.screens.LoginScreen
+import com.example.librarybooklendingsystem.ui.screens.PendingBooksApprovalScreen
+import com.example.librarybooklendingsystem.ui.screens.ReturnedBooksStatsScreen
 import com.example.librarybooklendingsystem.ui.screens.SignUpScreen
+import com.example.librarybooklendingsystem.ui.screens.UserStatsScreen
 import com.google.firebase.FirebaseApp
 import com.google.firebase.firestore.FirebaseFirestore
 
@@ -45,8 +52,11 @@ class MainActivity : ComponentActivity() {
             Log.e("FirebaseCheck", "Firebase chưa kết nối!")
         }
 
+        // Initialize AuthState
+        AuthState.init(this)
+
         setContent {
-            MainScreen() // Show the main screen
+            MainScreen()
         }
     }
 }
@@ -63,25 +73,51 @@ fun MainScreen() {
     val navController = rememberNavController()
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
+    val isAdmin by AuthState.isAdmin.collectAsState(initial = false)
+
+    LaunchedEffect(Unit) {
+        // Check login state and redirect if necessary
+        if (AuthState.isLoggedIn) {
+            AuthState.updateUserRole { success ->
+                if (success && isAdmin) {
+                    navController.navigate("admin_dashboard") {
+                        popUpTo(0) { inclusive = true }
+                    }
+                }
+            }
+        }
+    }
 
     Scaffold(
         bottomBar = {
             if (currentRoute != "login" && currentRoute != "signup") {
-                BottomNavigationBar(navController = navController) // Show bottom navigation bar
+                BottomNavigationBar(navController = navController)
             }
         }
     ) { paddingValues ->
         NavHost(
             navController = navController,
-            startDestination = "home", // Set initial destination
+            startDestination = if (AuthState.isLoggedIn) {
+                if (isAdmin) "admin_dashboard" else "home"
+            } else "login",
             modifier = Modifier.padding(paddingValues)
         ) {
+            composable("login") { LoginScreen(navController) }
+            composable("signup") { SignUpScreen(navController) }
             composable("home") { HomeScreen(navController) }
-            composable("bookDetails") { BookDetailsScreen(navController) } // Book details page
-            composable("borrowBook") { BorrowBookScreen(navController) } // Borrow book page
-            composable("account") { AccountScreen(navController) } // Account page
-            composable("login") { LoginScreen(navController) } // Login page
-            composable("signup") { SignUpScreen(navController) } // Sign-up page
+            composable("bookDetails") { BookDetailsScreen(navController) }
+            composable("borrowBook") { BorrowBookScreen(navController) }
+            composable("account") { AccountScreen(navController) }
+            composable("admin_dashboard") { AdminDashboardScreen(navController) }
+            composable("create_admin") { CreateAdminScreen(navController) }
+
+            // Admin Dashboard Routes
+            composable("borrowed_books_stats") { BorrowedBooksStatsScreen(navController) }
+            composable("user_stats") { UserStatsScreen(navController) }
+            composable("returned_books_stats") { ReturnedBooksStatsScreen(navController) }
+            composable("library_stats") { LibraryStatsScreen(navController) }
+            composable("pending_books_approval") { PendingBooksApprovalScreen(navController) }
+            composable("account_management") { AccountManagementScreen(navController) }
         }
     }
 }

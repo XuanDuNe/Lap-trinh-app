@@ -7,6 +7,8 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.*
@@ -25,64 +27,78 @@ import androidx.navigation.compose.rememberNavController
 import com.example.librarybooklendingsystem.R
 
 @Composable
-fun AdminDashboard(navController: NavController) {
-    Column(
+fun AdminDashboardScreen(navController: NavController) {
+    val statistics = listOf(
+        Triple("Thống kê mượn sách", "borrowed_books_stats", R.drawable.ic),
+        Triple("Thống kê người dùng", "user_stats", R.drawable.ic),
+        Triple("Thống kê trả sách", "returned_books_stats", R.drawable.ic),
+        Triple("Thống kê sách trong thư viện", "library_stats", R.drawable.ic),
+        Triple("Thống kê danh sách cần duyệt", "pending_books_approval", R.drawable.ic),
+        Triple("Quản lý tài khoản", "account_management", R.drawable.ic)
+    )
+
+    LazyColumn(
         modifier = Modifier
             .fillMaxSize()
             .background(Color(0xFFF7F6FC))
             .padding(16.dp)
     ) {
-        Card(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(100.dp),
-            backgroundColor = Color(0xFF0288D1),
-            shape = RoundedCornerShape(8.dp),
-            elevation = 5.dp
-        ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(16.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Image(
-                    painter = painterResource(id = R.drawable.avatar),
-                    contentDescription = "Admin Avatar",
-                    modifier = Modifier
-                        .size(50.dp)
-                        .clip(CircleShape)
-                        .background(Color.White)
-                )
-                Spacer(modifier = Modifier.width(12.dp))
-                Text(
-                    text = "Admin",
-                    fontSize = 22.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color.White
-                )
-            }
-        }
-        Spacer(modifier = Modifier.height(12.dp))
-        Text(text = "Welcome Back!", fontSize = 20.sp, fontWeight = FontWeight.Bold)
-        Text(text = "Hi, Admin", fontSize = 14.sp, color = Color.Gray)
-        Spacer(modifier = Modifier.height(20.dp))
-
-        val statistics = listOf(
-            "Thống kê mượn sách" to "borrowed_books_stats",
-            "Thống kê người dùng" to "user_stats",
-            "Thống kê trả sách" to "returned_books_stats",
-            "Thống kê sách trong thư viện" to "library_stats",
-            "Thống kê danh sách cần duyệt" to "pending_books_approval"
-        )
-
-        statistics.forEach { (title, route) ->
+        // Header Card
+        item {
             Card(
                 modifier = Modifier
-                    .height(130.dp)
                     .fillMaxWidth()
-                    .padding(vertical = 15.dp)
-                    .clickable { navController.navigate(route) },
+                    .height(100.dp),
+                backgroundColor = Color(0xFF0288D1),
+                shape = RoundedCornerShape(8.dp),
+                elevation = 5.dp
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(16.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Image(
+                        painter = painterResource(id = R.drawable.avatar),
+                        contentDescription = "Admin Avatar",
+                        modifier = Modifier
+                            .size(50.dp)
+                            .clip(CircleShape)
+                            .background(Color.White)
+                    )
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Text(
+                        text = "Admin",
+                        fontSize = 22.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White
+                    )
+                }
+            }
+        }
+
+        // Welcome Text
+        item {
+            Spacer(modifier = Modifier.height(12.dp))
+            Text(text = "Welcome Back!", fontSize = 20.sp, fontWeight = FontWeight.Bold)
+            Text(text = "Hi, Admin", fontSize = 14.sp, color = Color.Gray)
+            Spacer(modifier = Modifier.height(20.dp))
+        }
+
+        // Statistics Cards
+        items(statistics) { (title, route, iconRes) ->
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(130.dp)
+                    .padding(vertical = 8.dp)
+                    .clickable { 
+                        navController.navigate(route) {
+                            launchSingleTop = true
+                            popUpTo("admin_dashboard") { saveState = true }
+                        }
+                    },
                 shape = RoundedCornerShape(12.dp),
                 elevation = 6.dp
             ) {
@@ -100,15 +116,25 @@ fun AdminDashboard(navController: NavController) {
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
-                            painter = painterResource(id = R.drawable.ic),
-                            contentDescription = null,
+                            painter = painterResource(id = iconRes),
+                            contentDescription = title,
                             tint = Color(0xFF0288D1),
                             modifier = Modifier.size(24.dp)
                         )
                     }
                     Spacer(modifier = Modifier.width(12.dp))
                     Column {
-                        Text(text = title, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                        Text(
+                            text = title,
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = "Xem chi tiết",
+                            fontSize = 14.sp,
+                            color = Color.Gray
+                        )
                     }
                 }
             }
@@ -120,5 +146,5 @@ fun AdminDashboard(navController: NavController) {
 @Composable
 fun PreviewAdminDashboard() {
     val navController = rememberNavController()
-    AdminDashboard(navController)
+    AdminDashboardScreen(navController)
 }
