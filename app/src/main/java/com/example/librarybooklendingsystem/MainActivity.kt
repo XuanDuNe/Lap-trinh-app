@@ -79,9 +79,18 @@ fun MainScreen() {
         // Check login state and redirect if necessary
         if (AuthState.isLoggedIn) {
             AuthState.updateUserRole { success ->
-                if (success && isAdmin) {
-                    navController.navigate("admin_dashboard") {
-                        popUpTo(0) { inclusive = true }
+                if (success) {
+                    // Chỉ điều hướng nếu đang ở màn hình login hoặc signup
+                    if (currentRoute == "login" || currentRoute == "signup") {
+                        if (isAdmin) {
+                            navController.navigate("admin_dashboard") {
+                                popUpTo(0) { inclusive = true }
+                            }
+                        } else {
+                            navController.navigate("home") {
+                                popUpTo(0) { inclusive = true }
+                            }
+                        }
                     }
                 }
             }
@@ -97,9 +106,7 @@ fun MainScreen() {
     ) { paddingValues ->
         NavHost(
             navController = navController,
-            startDestination = if (AuthState.isLoggedIn) {
-                if (isAdmin) "admin_dashboard" else "home"
-            } else "login",
+            startDestination = "login",
             modifier = Modifier.padding(paddingValues)
         ) {
             composable("login") { LoginScreen(navController) }
@@ -108,16 +115,86 @@ fun MainScreen() {
             composable("bookDetails") { BookDetailsScreen(navController) }
             composable("borrowBook") { BorrowBookScreen(navController) }
             composable("account") { AccountScreen(navController) }
-            composable("admin_dashboard") { AdminDashboardScreen(navController) }
+            composable("admin_dashboard") { 
+                if (isAdmin) {
+                    AdminDashboardScreen(navController)
+                } else {
+                    LaunchedEffect(Unit) {
+                        navController.navigate("home") {
+                            popUpTo(0) { inclusive = true }
+                        }
+                    }
+                }
+            }
             composable("create_admin") { CreateAdminScreen(navController) }
 
             // Admin Dashboard Routes
-            composable("borrowed_books_stats") { BorrowedBooksStatsScreen(navController) }
-            composable("user_stats") { UserStatsScreen(navController) }
-            composable("returned_books_stats") { ReturnedBooksStatsScreen(navController) }
-            composable("library_stats") { LibraryStatsScreen(navController) }
-            composable("pending_books_approval") { PendingBooksApprovalScreen(navController) }
-            composable("account_management") { AccountManagementScreen(navController) }
+            composable("borrowed_books_stats") { 
+                if (isAdmin) {
+                    BorrowedBooksStatsScreen(navController)
+                } else {
+                    LaunchedEffect(Unit) {
+                        navController.navigate("home") {
+                            popUpTo(0) { inclusive = true }
+                        }
+                    }
+                }
+            }
+            composable("user_stats") { 
+                if (isAdmin) {
+                    UserStatsScreen(navController)
+                } else {
+                    LaunchedEffect(Unit) {
+                        navController.navigate("home") {
+                            popUpTo(0) { inclusive = true }
+                        }
+                    }
+                }
+            }
+            composable("returned_books_stats") { 
+                if (isAdmin) {
+                    ReturnedBooksStatsScreen(navController)
+                } else {
+                    LaunchedEffect(Unit) {
+                        navController.navigate("home") {
+                            popUpTo(0) { inclusive = true }
+                        }
+                    }
+                }
+            }
+            composable("library_stats") { 
+                if (isAdmin) {
+                    LibraryStatsScreen(navController)
+                } else {
+                    LaunchedEffect(Unit) {
+                        navController.navigate("home") {
+                            popUpTo(0) { inclusive = true }
+                        }
+                    }
+                }
+            }
+            composable("pending_books_approval") { 
+                if (isAdmin) {
+                    PendingBooksApprovalScreen(navController)
+                } else {
+                    LaunchedEffect(Unit) {
+                        navController.navigate("home") {
+                            popUpTo(0) { inclusive = true }
+                        }
+                    }
+                }
+            }
+            composable("account_management") { 
+                if (isAdmin) {
+                    AccountManagementScreen(navController)
+                } else {
+                    LaunchedEffect(Unit) {
+                        navController.navigate("home") {
+                            popUpTo(0) { inclusive = true }
+                        }
+                    }
+                }
+            }
         }
     }
 }

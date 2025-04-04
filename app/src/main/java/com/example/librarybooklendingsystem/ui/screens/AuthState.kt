@@ -99,14 +99,28 @@ object AuthState {
                                     _currentUserRole.value = role
                                     _isAdmin.value = role == "admin"
                                     saveAuthState(role, role == "admin")
+                                    _isLoading.value = false
                                     onSuccess()
                                 } else {
-                                    _currentUserRole.value = "user"
-                                    _isAdmin.value = false
-                                    saveAuthState("user", false)
-                                    onSuccess()
+                                    // Nếu document không tồn tại, tạo mới với role user
+                                    val userData = hashMapOf(
+                                        "role" to "user",
+                                        "email" to email,
+                                        "createdAt" to System.currentTimeMillis()
+                                    )
+                                    userRef.set(userData)
+                                        .addOnSuccessListener {
+                                            _currentUserRole.value = "user"
+                                            _isAdmin.value = false
+                                            saveAuthState("user", false)
+                                            _isLoading.value = false
+                                            onSuccess()
+                                        }
+                                        .addOnFailureListener { e ->
+                                            _isLoading.value = false
+                                            onError("Lỗi khi tạo thông tin người dùng: ${e.message}")
+                                        }
                                 }
-                                _isLoading.value = false
                             }
                             .addOnFailureListener { e ->
                                 _isLoading.value = false
