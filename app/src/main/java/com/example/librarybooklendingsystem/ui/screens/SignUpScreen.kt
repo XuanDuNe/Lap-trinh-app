@@ -1,6 +1,6 @@
 package com.example.librarybooklendingsystem.ui.screens
 
-
+import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -18,16 +18,19 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.example.librarybooklendingsystem.R
-import androidx.compose.ui.tooling.preview.Preview
-import androidx.navigation.compose.rememberNavController
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.FirebaseUser
 
 @Composable
 fun SignUpScreen(navController: NavController) {
+    val auth = FirebaseAuth.getInstance()
+
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var confirmPassword by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
     var confirmPasswordVisible by remember { mutableStateOf(false) }
+    var errorMessage by remember { mutableStateOf("") }
 
     Column(
         modifier = Modifier
@@ -46,16 +49,17 @@ fun SignUpScreen(navController: NavController) {
         )
 
         Text(
-            text = "Welcome ! Create your",
+            text = "Welcome! Create your",
             style = MaterialTheme.typography.headlineMedium
         )
-        
+
         Text(
             text = "new account now.",
             style = MaterialTheme.typography.headlineMedium,
             modifier = Modifier.padding(bottom = 32.dp)
         )
 
+        // Email input field
         OutlinedTextField(
             value = email,
             onValueChange = { email = it },
@@ -65,6 +69,7 @@ fun SignUpScreen(navController: NavController) {
                 .padding(bottom = 16.dp)
         )
 
+        // Password input field
         OutlinedTextField(
             value = password,
             onValueChange = { password = it },
@@ -84,6 +89,7 @@ fun SignUpScreen(navController: NavController) {
             }
         )
 
+        // Confirm password input field
         OutlinedTextField(
             value = confirmPassword,
             onValueChange = { confirmPassword = it },
@@ -103,8 +109,56 @@ fun SignUpScreen(navController: NavController) {
             }
         )
 
+        // Display error message if any
+        if (errorMessage.isNotEmpty()) {
+            Text(
+                text = errorMessage,
+                color = Color.Red,
+                style = MaterialTheme.typography.bodySmall,
+                modifier = Modifier.padding(bottom = 8.dp)
+            )
+        }
+
+        // Sign-up button
         Button(
-            onClick = { /* TODO: Handle sign up */ },
+            onClick = {
+                // Kiểm tra điều kiện hợp lệ trước khi đăng ký
+                if (email.isEmpty() || password.isEmpty() || confirmPassword.isEmpty()) {
+                    errorMessage = "Please fill in all fields."
+                    return@Button
+                }
+
+                if (!android.util.Patterns.EMAIL_ADDRESS.matcher(email.trim()).matches()) {
+                    errorMessage = "Invalid email format."
+                    return@Button
+                }
+
+                if (password.length < 6) {
+                    errorMessage = "Password must be at least 6 characters."
+                    return@Button
+                }
+
+                if (password != confirmPassword) {
+                    errorMessage = "Passwords do not match."
+                    return@Button
+                }
+
+                // Firebase Auth sign-up logic
+                auth.createUserWithEmailAndPassword(email, password)
+                    .addOnCompleteListener { task ->
+                        if (task.isSuccessful) {
+                            val user: FirebaseUser? = auth.currentUser
+                            if (user != null) {
+                                // Successfully signed up, navigate to login screen
+                                navController.navigate("login") {
+                                    popUpTo("signup") { inclusive = true }
+                                }
+                            }
+                        } else {
+                            errorMessage = task.exception?.localizedMessage ?: "Sign up failed. Please try again."
+                        }
+                    }
+            },
             modifier = Modifier
                 .fillMaxWidth()
                 .height(55.dp)
@@ -120,11 +174,12 @@ fun SignUpScreen(navController: NavController) {
             )
         }
 
+        // Navigation to login screen if the user already has an account
         Row(
             modifier = Modifier.padding(top = 16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text("have an account? ")
+            Text("Have an account? ")
             TextButton(onClick = { navController.navigate("login") }) {
                 Text(
                     "Sign In",
@@ -140,12 +195,3 @@ fun SignUpScreen(navController: NavController) {
         )
     }
 }
-
-@Preview(showBackground = true, widthDp = 360, heightDp = 800)
-@Composable
-fun SignUpScreenPreview() {
-    MaterialTheme {
-        SignUpScreen(navController = rememberNavController())
-    }
-}
-

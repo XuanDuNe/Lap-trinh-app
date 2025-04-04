@@ -14,11 +14,8 @@ import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Scaffold
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.navigation.NavController
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.ui.unit.dp
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -39,6 +36,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        // Initialize Firebase
         val db = FirebaseFirestore.getInstance()
 
         if (FirebaseApp.getApps(this).isNotEmpty()) {
@@ -46,11 +44,12 @@ class MainActivity : ComponentActivity() {
         } else {
             Log.e("FirebaseCheck", "Firebase chưa kết nối!")
         }
+
         setContent {
-                MainScreen()
-            }
+            MainScreen() // Show the main screen
         }
     }
+}
 
 class MyApplication : Application() {
     override fun onCreate() {
@@ -68,22 +67,21 @@ fun MainScreen() {
     Scaffold(
         bottomBar = {
             if (currentRoute != "login" && currentRoute != "signup") {
-                BottomNavigationBar(navController = navController)
+                BottomNavigationBar(navController = navController) // Show bottom navigation bar
             }
         }
     ) { paddingValues ->
         NavHost(
             navController = navController,
-            startDestination = "home",
+            startDestination = "home", // Set initial destination
             modifier = Modifier.padding(paddingValues)
         ) {
             composable("home") { HomeScreen(navController) }
-            composable("bookDetails") { BookDetailsScreen(navController)}
-            composable("bookDetails") { BookDetailsScreen(navController) }
-            composable("borrowBook") { BorrowBookScreen(navController) }
-            composable("account") { AccountScreen(navController) }
-            composable("login") { LoginScreen(navController) }
-            composable("signup") { SignUpScreen(navController) }
+            composable("bookDetails") { BookDetailsScreen(navController) } // Book details page
+            composable("borrowBook") { BorrowBookScreen(navController) } // Borrow book page
+            composable("account") { AccountScreen(navController) } // Account page
+            composable("login") { LoginScreen(navController) } // Login page
+            composable("signup") { SignUpScreen(navController) } // Sign-up page
         }
     }
 }

@@ -60,25 +60,25 @@ dependencies {
     debugImplementation(libs.androidx.ui.test.manifest)
 }
 dependencies {
-    implementation ("androidx.navigation:navigation-compose:2.5.3")
-    implementation ("androidx.navigation:navigation-runtime-ktx:2.5.3")
-    implementation ("androidx.compose.ui:ui:1.5.0")
-    implementation ("androidx.compose.material:material:1.5.0")
-    implementation ("androidx.compose.ui:ui-tooling-preview:1.5.0")
-    implementation ("androidx.compose.foundation:foundation:1.5.0")
-    implementation ("androidx.activity:activity-compose:1.7.0")
-    implementation ("androidx.compose.material:material-icons-extended:1.5.0")
-    // Import the Firebase BoM
+    implementation("androidx.navigation:navigation-compose:2.5.3")
+    implementation("androidx.navigation:navigation-runtime-ktx:2.5.3")
+    implementation("androidx.compose.ui:ui:1.5.0")
+    implementation("androidx.compose.material:material:1.5.0")
+    implementation("androidx.compose.ui:ui-tooling-preview:1.5.0")
+    implementation("androidx.compose.foundation:foundation:1.5.0")
+    implementation("androidx.activity:activity-compose:1.7.0")
+    implementation("androidx.compose.material:material-icons-extended:1.5.0")
+
+    // Firebase BoM
     implementation(platform("com.google.firebase:firebase-bom:33.12.0"))
 
-
-    // TODO: Add the dependencies for Firebase products you want to use
-    // When using the BoM, don't specify versions in Firebase dependencies
+    // Firebase SDKs
     implementation("com.google.firebase:firebase-analytics")
-
-
     implementation("com.google.firebase:firebase-auth-ktx:22.1.2")
     implementation("com.google.firebase:firebase-firestore-ktx:24.11.1")
-    implementation ("com.google.firebase:firebase-firestore-ktx")
 
+    // Facebook SDK
+    implementation("com.facebook.android:facebook-login:12.3.0")
+    implementation ("com.google.firebase:firebase-auth:21.0.1")
+    implementation ("com.google.android.gms:play-services-auth:20.1.0")
 }

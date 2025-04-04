@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">Library Book Lending System</string>
+    <string name="fb_login_protocol_scheme">fbYOUR_APP_ID</string>
 </resources>

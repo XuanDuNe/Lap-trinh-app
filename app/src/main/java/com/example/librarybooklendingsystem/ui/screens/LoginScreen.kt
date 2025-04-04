@@ -1,5 +1,6 @@
 package com.example.librarybooklendingsystem.ui.screens
 
+import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -17,14 +18,19 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.example.librarybooklendingsystem.R
-import androidx.compose.ui.tooling.preview.Preview
-import androidx.navigation.compose.rememberNavController
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.FirebaseUser
 
 @Composable
 fun LoginScreen(navController: NavController) {
+    val auth = FirebaseAuth.getInstance()
+
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
+    var confirmPassword by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
+    var confirmPasswordVisible by remember { mutableStateOf(false) }
+    var errorMessage by remember { mutableStateOf("") }
 
     Column(
         modifier = Modifier
@@ -57,7 +63,7 @@ fun LoginScreen(navController: NavController) {
         OutlinedTextField(
             value = email,
             onValueChange = { email = it },
-            label = { Text("Đăng nhập") },
+            label = { Text("Email") },
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(bottom = 16.dp)
@@ -82,6 +88,16 @@ fun LoginScreen(navController: NavController) {
             }
         )
 
+        // Display error message if any
+        if (errorMessage.isNotEmpty()) {
+            Text(
+                text = errorMessage,
+                color = Color.Red,
+                style = MaterialTheme.typography.bodySmall,
+                modifier = Modifier.padding(bottom = 8.dp)
+            )
+        }
+
         TextButton(
             onClick = { /* TODO: Handle forgot password */ },
             modifier = Modifier.align(Alignment.End)
@@ -93,12 +109,22 @@ fun LoginScreen(navController: NavController) {
         }
 
         Button(
-            onClick = { 
-                // TODO: Thêm logic xác thực thực tế
-                AuthState.isLoggedIn = true
-                navController.navigate("home") {
-                    popUpTo("login") { inclusive = true }
-                }
+            onClick = {
+                // Firebase Auth sign-in logic
+                auth.signInWithEmailAndPassword(email, password)
+                    .addOnCompleteListener { task ->
+                        if (task.isSuccessful) {
+                            val user: FirebaseUser? = auth.currentUser
+                            if (user != null) {
+                                // Successfully logged in
+                                navController.navigate("home") {
+                                    popUpTo("login") { inclusive = true }
+                                }
+                            }
+                        } else {
+                            errorMessage = "Invalid credentials or account not found"
+                        }
+                    }
             },
             modifier = Modifier
                 .fillMaxWidth()
@@ -127,14 +153,6 @@ fun LoginScreen(navController: NavController) {
                 )
             }
         }
-    }
-}
-
-@Preview(showBackground = true, widthDp = 360, heightDp = 800)
-@Composable
-fun LoginScreenPreview() {
-    MaterialTheme {
-        LoginScreen(navController = rememberNavController())
     }
 }
 
