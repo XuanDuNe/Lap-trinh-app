@@ -15,8 +15,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import androidx.navigation.compose.rememberNavController
 import com.example.librarybooklendingsystem.R
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
@@ -187,11 +189,5 @@ fun SignUpScreen(navController: NavController) {
                 )
             }
         }
-
-        Text(
-            text = "Or Login with",
-            style = MaterialTheme.typography.bodyMedium,
-            modifier = Modifier.padding(top = 16.dp)
-        )
     }
 }

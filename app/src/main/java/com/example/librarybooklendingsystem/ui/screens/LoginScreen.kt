@@ -110,6 +110,10 @@ fun LoginScreen(navController: NavController) {
 
         Button(
             onClick = {
+                if (email.isEmpty() || password.isEmpty()) {
+                    errorMessage = "Vui lòng nhập đầy đủ thông tin đăng nhập"
+                    return@Button
+                }
                 // Firebase Auth sign-in logic
                 auth.signInWithEmailAndPassword(email, password)
                     .addOnCompleteListener { task ->
