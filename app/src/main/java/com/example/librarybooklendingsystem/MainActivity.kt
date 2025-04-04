@@ -1,6 +1,8 @@
 package com.example.librarybooklendingsystem
 
+import android.app.Application
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.padding
@@ -15,13 +17,27 @@ import com.example.librarybooklendingsystem.ui.screens.AdminDashboard
 import com.example.librarybooklendingsystem.ui.screens.BorrowBookScreen
 import com.example.librarybooklendingsystem.ui.screens.BookDetailsScreen
 import com.example.librarybooklendingsystem.ui.screens.BottomNavigationBar
+import com.google.firebase.FirebaseApp
+import com.google.firebase.firestore.FirebaseFirestore
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        if (FirebaseApp.getApps(this).isNotEmpty()) {
+            Log.d("FirebaseCheck", "Firebase đã kết nối thành công!")
+        } else {
+            Log.e("FirebaseCheck", "Firebase chưa kết nối!")
+        }
         setContent {
             MainScreen()
         }
+    }
+}
+
+class MyApplication : Application() {
+    override fun onCreate() {
+        super.onCreate()
+        FirebaseApp.initializeApp(this)
     }
 }
 
