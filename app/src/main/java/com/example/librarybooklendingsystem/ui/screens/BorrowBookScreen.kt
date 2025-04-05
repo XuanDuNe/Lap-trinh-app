@@ -206,7 +206,6 @@ fun BorrowBookScreen(
                             // Lấy thông tin sách từ Firebase
                             val bookDetails = FirebaseManager.getBookById(bookId ?: "")
                             Log.d("BorrowBookScreen", "Thông tin sách từ Firebase: $bookDetails")
-                            Log.d("BorrowBookScreen", "Tên tác giả: ${bookDetails?.author_name}")
                             
                             if (bookDetails == null) {
                                 errorMessage = "Không tìm thấy thông tin sách"
@@ -215,28 +214,23 @@ fun BorrowBookScreen(
                             }
 
                             val borrowData = mapOf(
-                                "userId" to (AuthState.currentUserId ?: ""),
-                                "bookId" to (bookId ?: ""),
+                                "id" to (bookId ?: ""),
+                                "title" to bookDetails.title,
+                                "author" to bookDetails.author_name,
+                                "coverUrl" to bookDetails.coverUrl,
                                 "studentName" to studentName.value.text,
-                                "expectedReturnDate" to expectedReturnDate.value.text,
-                                "status" to FirebaseManager.BorrowStatus.PENDING,
-                                "borrowDate" to Date(),
-                                "bookTitle" to bookDetails.title,
-                                "bookCover" to bookDetails.coverUrl,
-                                "author_id" to bookDetails.author_id,
-                                "author_name" to bookDetails.author_name
+                                "expectedReturnDate" to expectedReturnDate.value.text
                             )
                             
                             Log.d("BorrowBookScreen", "Dữ liệu mượn sách sẽ lưu: $borrowData")
 
-                            FirebaseManager.createBorrowRequest(borrowData)
+                            FirebaseManager.borrowBook(AuthState.currentUserId ?: "", borrowData)
                             navController.navigate("account") {
                                 popUpTo("borrowbook/${bookId}") { inclusive = true }
                             }
                         } catch (e: Exception) {
                             Log.e("BorrowBookScreen", "Lỗi khi mượn sách: ${e.message}")
-                            Log.e("BorrowBookScreen", "Stack trace: ${e.stackTraceToString()}")
-                            errorMessage = e.message ?: "Đã xảy ra lỗi khi gửi yêu cầu mượn sách"
+                            errorMessage = e.message ?: "Có lỗi xảy ra khi mượn sách"
                             showError = true
                         } finally {
                             isLoading = false

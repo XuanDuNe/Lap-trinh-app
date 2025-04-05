@@ -1,9 +1,11 @@
 package com.example.librarybooklendingsystem.ui.screens
 
 import android.util.Log
+import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -24,6 +26,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -49,6 +52,58 @@ fun AccountScreen(navController: NavController) {
     val scope = rememberCoroutineScope()
     val auth = FirebaseAuth.getInstance()
     val currentUser = auth.currentUser
+    var showReturnDialog by remember { mutableStateOf(false) }
+    var selectedBook by remember { mutableStateOf<Map<String, Any>?>(null) }
+
+    // Dialog xác nhận trả sách
+    if (showReturnDialog) {
+        AlertDialog(
+            onDismissRequest = { 
+                showReturnDialog = false
+                selectedBook = null
+            },
+            title = { Text("Xác nhận trả sách") },
+            text = { Text("Bạn có chắc chắn muốn trả sách này không?") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        scope.launch {
+                            selectedBook?.let { book ->
+                                try {
+                                    val bookId = book["bookId"] as? String
+                                    if (bookId != null) {
+                                        // Cập nhật trạng thái sách trong Firestore
+                                        FirebaseManager.returnBook(currentUser?.uid ?: "", book)
+                                        
+                                        // Xóa sách khỏi danh sách hiển thị ngay lập tức
+                                        borrowedBooks = borrowedBooks.filter { 
+                                            (it["bookId"] as? String) != bookId 
+                                        }
+                                    }
+                                } catch (e: Exception) {
+                                    Log.e("AccountScreen", "Lỗi khi trả sách: ${e.message}")
+                                }
+                            }
+                            showReturnDialog = false
+                            selectedBook = null
+                        }
+                    }
+                ) {
+                    Text("Có")
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = { 
+                        showReturnDialog = false
+                        selectedBook = null
+                    }
+                ) {
+                    Text("Không")
+                }
+            }
+        )
+    }
 
     // Xử lý nút back của hệ thống
     BackHandler {
@@ -184,23 +239,28 @@ fun AccountScreen(navController: NavController) {
             } else {
                 LazyVerticalGrid(
                     columns = GridCells.Fixed(3),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .fillMaxHeight(),
-                    userScrollEnabled = true,
-                    content = {
-                        items(borrowedBooks) { book ->
-                            BorrowedBookGridItem(book)
-                        }
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    items(borrowedBooks) { book ->
+                        BorrowedBookGridItem(
+                            book = book,
+                            onBookClick = {
+                                selectedBook = book
+                                showReturnDialog = true
+                            }
+                        )
                     }
-                )
+                }
             }
         }
     }
 }
 
 @Composable
-fun BorrowedBookGridItem(book: Map<String, Any>) {
+fun BorrowedBookGridItem(
+    book: Map<String, Any>,
+    onBookClick: () -> Unit
+) {
     Log.d("BorrowedBookGridItem", "Book data: $book")
     
     val bookTitle = book["bookTitle"] as? String ?: "Không có tiêu đề"
@@ -220,58 +280,69 @@ fun BorrowedBookGridItem(book: Map<String, Any>) {
         "Chưa có"
     }
 
-    Column(
+    Card(
         modifier = Modifier
             .padding(4.dp)
             .width(110.dp)
-            .height(280.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
+            .height(250.dp)
+            .clickable { onBookClick() },
+        shape = RoundedCornerShape(12.dp),
+        elevation = CardDefaults.cardElevation(
+            defaultElevation = 4.dp
+        )
     ) {
-        Box(
-            modifier = Modifier
-                .width(100.dp)
-                .height(120.dp),
-            contentAlignment = Alignment.Center
+        Column(
+            modifier = Modifier.fillMaxSize(),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Top
         ) {
             AsyncImage(
                 model = book["bookCover"] as? String ?: "",
                 contentDescription = "Book Image",
-                modifier = Modifier.fillMaxSize(),
-                contentScale = ContentScale.Fit
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(150.dp),
+                contentScale = ContentScale.Crop
             )
+            
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 4.dp, vertical = 4.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(2.dp)
+            ) {
+                Text(
+                    text = bookTitle,
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.Bold,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.padding(horizontal = 4.dp)
+                )
+                
+                Text(
+                    text = authorName,
+                    fontSize = 11.sp,
+                    color = Color.Gray,
+                    maxLines = 1,
+                    textAlign = TextAlign.Center
+                )
+                
+                Text(
+                    text = "Ngày mượn: $currentDate",
+                    fontSize = 11.sp,
+                    color = Color.Gray
+                )
+                
+                Text(
+                    text = "Ngày trả dự kiến: $expectedReturnDate",
+                    fontSize = 11.sp,
+                    color = Color.Gray
+                )
+            }
         }
-        
-        Spacer(modifier = Modifier.height(8.dp))
-        
-        Text(
-            text = bookTitle,
-            fontSize = 13.sp,
-            fontWeight = FontWeight.Bold,
-            maxLines = 2,
-            textAlign = TextAlign.Center
-        )
-        
-        Text(
-            text = authorName,
-            fontSize = 11.sp,
-            color = Color.Gray,
-            maxLines = 1,
-            textAlign = TextAlign.Center
-        )
-        
-        Spacer(modifier = Modifier.height(8.dp))
-        
-        Text(
-            text = "Ngày mượn: $currentDate",
-            fontSize = 11.sp,
-            color = Color.Gray
-        )
-        
-        Text(
-            text = "Ngày trả dự kiến: $expectedReturnDate",
-            fontSize = 11.sp,
-            color = Color.Gray
-        )
     }
 }
 
