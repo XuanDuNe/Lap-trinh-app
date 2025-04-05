@@ -78,7 +78,8 @@ fun BookDetailsScreen(
                     model = book?.coverUrl,
                     contentDescription = "Book Image",
                     modifier = Modifier
-                        .size(220.dp)
+                        .width(200.dp)
+                        .height(300.dp)
                         .padding(top = 16.dp),
                     contentScale = ContentScale.Crop
                 )
@@ -89,7 +90,7 @@ fun BookDetailsScreen(
                     fontSize = 18.sp,
                     fontWeight = FontWeight.Bold
                 )
-                Spacer(modifier = Modifier.height(8.dp))
+
 
                 Column(
                     modifier = Modifier
