@@ -231,7 +231,7 @@ object AuthState {
 
     fun setAdminRole(userId: String, email: String, context: Context, onSuccess: () -> Unit, onError: (String) -> Unit) {
         _isLoading.value = true
-        
+
         // Cập nhật role trong collection users
         val userRef = db.collection("users").document(userId)
         val userData = hashMapOf(
@@ -239,7 +239,7 @@ object AuthState {
             "email" to email,
             "updatedAt" to System.currentTimeMillis()
         )
-        
+
         userRef.set(userData)
             .addOnSuccessListener {
                 // Tạo hoặc cập nhật document trong collection admin
@@ -249,7 +249,7 @@ object AuthState {
                     "createdAt" to System.currentTimeMillis(),
                     "isActive" to true
                 )
-                
+
                 adminRef.set(adminData)
                     .addOnSuccessListener {
                         _currentUserRole.value = "admin"

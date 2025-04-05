@@ -75,7 +75,7 @@ object FirebaseManager {
                 .await()
 
             Log.d("FirebaseManager", "Số lượng documents nhận được: ${snapshot.size()}")
-            
+
             if (snapshot.isEmpty) {
                 Log.d("FirebaseManager", "Collection books trống")
                 return emptyList()
@@ -86,7 +86,7 @@ object FirebaseManager {
                 try {
                     Log.d("FirebaseManager", "Đang parse document ID: ${doc.id}")
                     Log.d("FirebaseManager", "Document data: ${doc.data}")
-                    
+
                     val book = Book.fromMap(doc.id, doc.data ?: emptyMap())
                     Log.d("FirebaseManager", "Đã parse thành công sách: ${book.title}")
                     book
@@ -99,7 +99,7 @@ object FirebaseManager {
 
             Log.d("FirebaseManager", "Tổng số sách đã parse thành công: ${books.size}")
             Log.d("FirebaseManager", "Danh sách sách: ${books.map { it.title }}")
-            
+
             books
         } catch (e: Exception) {
             Log.e("FirebaseManager", "Lỗi khi lấy sách từ Firebase: ${e.message}")
@@ -243,7 +243,7 @@ object FirebaseManager {
     suspend fun createBorrowRequest(borrowData: Map<String, Any>): String? {
         return try {
             Log.d("FirebaseManager", "Tạo yêu cầu mượn sách: $borrowData")
-            
+
             // Kiểm tra user đã đăng nhập
             val userId = borrowData["userId"] as? String
             if (userId.isNullOrEmpty()) {

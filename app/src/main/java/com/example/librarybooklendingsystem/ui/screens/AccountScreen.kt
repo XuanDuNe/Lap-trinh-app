@@ -98,18 +98,18 @@ fun AccountScreen(navController: NavController) {
             )
             Spacer(modifier = Modifier.height(8.dp))
             Text(
-                currentUser.email ?: "Người dùng", 
-                fontSize = 20.sp, 
+                currentUser.email ?: "Người dùng",
+                fontSize = 20.sp,
                 fontWeight = FontWeight.Bold
             )
             Text(
-                "ID: ${currentUser.uid}", 
-                fontSize = 16.sp, 
+                "ID: ${currentUser.uid}",
+                fontSize = 16.sp,
                 color = Color.Gray
             )
             Spacer(modifier = Modifier.height(16.dp))
             Button(
-                onClick = { 
+                onClick = {
                     auth.signOut()
                     navController.navigate("login") {
                         popUpTo(0) { inclusive = true }
@@ -127,8 +127,8 @@ fun AccountScreen(navController: NavController) {
             }
             Spacer(modifier = Modifier.height(16.dp))
             Text(
-                "Sách đang mượn", 
-                fontSize = 18.sp, 
+                "Sách đang mượn",
+                fontSize = 18.sp,
                 fontWeight = FontWeight.Bold
             )
             Spacer(modifier = Modifier.height(8.dp))
@@ -210,4 +210,3 @@ fun AccountScreenPreview() {
         AccountScreen(rememberNavController())
     }
 }
-
