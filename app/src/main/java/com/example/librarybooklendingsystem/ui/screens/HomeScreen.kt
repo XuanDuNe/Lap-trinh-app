@@ -67,6 +67,23 @@ fun HomeScreen(
     // Collect UI state
     val uiState by viewModel.uiState.collectAsState()
 
+    // Filter books based on search query
+    val filteredBooks = when (uiState) {
+        is BooksUiState.Success -> {
+            val books = (uiState as BooksUiState.Success).books
+            if (searchQuery.isBlank()) {
+                books
+            } else {
+                books.filter { book ->
+                    book.title.contains(searchQuery, ignoreCase = true) ||
+                    book.author.contains(searchQuery, ignoreCase = true) ||
+                    book.category.contains(searchQuery, ignoreCase = true)
+                }
+            }
+        }
+        else -> emptyList()
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -189,7 +206,7 @@ fun HomeScreen(
                                 contentPadding = PaddingValues(horizontal = 16.dp),
                                 horizontalArrangement = Arrangement.spacedBy(16.dp)
                             ) {
-                                items(books.take(10)) { book ->
+                                items(filteredBooks.take(10)) { book ->
                                     FirebaseBookItem(
                                         navController = navController,
                                         book = book
@@ -203,7 +220,7 @@ fun HomeScreen(
                                 contentPadding = PaddingValues(horizontal = 16.dp),
                                 horizontalArrangement = Arrangement.spacedBy(16.dp)
                             ) {
-                                items(books.sortedByDescending { it.createdAt }.take(10)) { book ->
+                                items(filteredBooks.sortedByDescending { it.createdAt }.take(10)) { book ->
                                     FirebaseBookItem(
                                         navController = navController,
                                         book = book
