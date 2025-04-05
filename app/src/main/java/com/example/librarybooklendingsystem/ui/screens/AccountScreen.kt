@@ -1,6 +1,7 @@
 package com.example.librarybooklendingsystem.ui.screens
 
 import android.util.Log
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -34,6 +35,8 @@ import com.google.firebase.auth.FirebaseAuth
 import coil.compose.AsyncImage
 import com.example.librarybooklendingsystem.ui.components.CommonHeader
 import kotlinx.coroutines.launch
+import java.text.SimpleDateFormat
+import java.util.*
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -41,9 +44,16 @@ fun AccountScreen(navController: NavController) {
     val context = LocalContext.current
     var borrowedBooks by remember { mutableStateOf<List<Map<String, Any>>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
+    var userName by remember { mutableStateOf("") }
+    var numericId by remember { mutableStateOf("") }
     val scope = rememberCoroutineScope()
     val auth = FirebaseAuth.getInstance()
     val currentUser = auth.currentUser
+
+    // Xử lý nút back của hệ thống
+    BackHandler {
+        // Không làm gì khi nhấn nút back
+    }
 
     LaunchedEffect(currentUser) {
         if (currentUser == null) {
@@ -53,12 +63,23 @@ fun AccountScreen(navController: NavController) {
         } else {
             scope.launch {
                 try {
+                    val userInfo = FirebaseManager.getUserInfo(currentUser.uid)
+                    userName = userInfo?.get("name") as? String ?: "Người dùng"
+                    
+                    // Tạo ID số ngẫu nhiên 6 chữ số
+                    val random = Random()
+                    numericId = String.format("%06d", random.nextInt(1000000))
+                    
+                    Log.d("AccountScreen", "Thông tin người dùng: $userInfo")
+                    Log.d("AccountScreen", "Tên người dùng: $userName")
+                    Log.d("AccountScreen", "Numeric ID: $numericId")
+
                     val books = FirebaseManager.getUserBorrowedBooks(currentUser.uid)
                     if (books != null) {
                         borrowedBooks = books
                     }
                 } catch (e: Exception) {
-                    Log.e("AccountScreen", "Lỗi khi lấy sách đã mượn: ${e.message}")
+                    Log.e("AccountScreen", "Lỗi khi lấy thông tin người dùng: ${e.message}")
                 } finally {
                     isLoading = false
                 }
@@ -77,37 +98,47 @@ fun AccountScreen(navController: NavController) {
     ) {
         CommonHeader(
             title = "Cá nhân",
-            onBackClick = { navController.navigateUp() },
+            onBackClick = { /* Không làm gì khi nhấn nút back */ },
             onShareClick = { /* Share action */ }
         )
 
-        // Content
         Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Image(
-                painter = painterResource(id = R.drawable.img),
-                contentDescription = "Avatar",
+            Box(
                 modifier = Modifier
                     .size(100.dp)
                     .clip(CircleShape)
-                    .background(Color.Gray)
-            )
+                    .background(Color(0xFF0093AB)),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = userName.firstOrNull()?.toString() ?: "U",
+                    color = Color.White,
+                    fontSize = 40.sp,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+
             Spacer(modifier = Modifier.height(8.dp))
+
             Text(
-                currentUser.email ?: "Người dùng",
+                text = userName,
                 fontSize = 20.sp,
                 fontWeight = FontWeight.Bold
             )
+
             Text(
-                "ID: ${currentUser.uid}",
-                fontSize = 16.sp,
+                text = "ID: $numericId",
+                fontSize = 14.sp,
                 color = Color.Gray
             )
+
             Spacer(modifier = Modifier.height(16.dp))
+
             Button(
                 onClick = {
                     auth.signOut()
@@ -125,12 +156,15 @@ fun AccountScreen(navController: NavController) {
             ) {
                 Text("Đăng xuất", color = Color.White)
             }
+
             Spacer(modifier = Modifier.height(16.dp))
+
             Text(
-                "Sách đang mượn",
+                text = "Sách đang mượn",
                 fontSize = 18.sp,
                 fontWeight = FontWeight.Bold
             )
+
             Spacer(modifier = Modifier.height(8.dp))
 
             if (isLoading) {
@@ -150,12 +184,16 @@ fun AccountScreen(navController: NavController) {
             } else {
                 LazyVerticalGrid(
                     columns = GridCells.Fixed(3),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    items(borrowedBooks) { book ->
-                        BorrowedBookGridItem(book)
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .fillMaxHeight(),
+                    userScrollEnabled = true,
+                    content = {
+                        items(borrowedBooks) { book ->
+                            BorrowedBookGridItem(book)
+                        }
                     }
-                }
+                )
             }
         }
     }
@@ -163,41 +201,75 @@ fun AccountScreen(navController: NavController) {
 
 @Composable
 fun BorrowedBookGridItem(book: Map<String, Any>) {
+    Log.d("BorrowedBookGridItem", "Book data: $book")
+    
+    val bookTitle = book["bookTitle"] as? String ?: "Không có tiêu đề"
+    val authorName = book["author_name"] as? String ?: "Không có tác giả"
+    
+    val currentDate = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(Date())
+    
+    val dateFormat = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
+    val expectedReturnDate = try {
+        when (val date = book["expectedReturnDate"]) {
+            is Long -> dateFormat.format(Date(date))
+            is String -> date
+            else -> "Chưa có"
+        }
+    } catch (e: Exception) {
+        Log.e("BorrowedBookGridItem", "Lỗi khi xử lý ngày trả: ${e.message}")
+        "Chưa có"
+    }
+
     Column(
         modifier = Modifier
-            .padding(8.dp)
-            .width(150.dp),
+            .padding(4.dp)
+            .width(110.dp)
+            .height(280.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        AsyncImage(
-            model = book["bookCover"] as? String ?: "",
-            contentDescription = "Book Image",
+        Box(
             modifier = Modifier
-                .width(110.dp)
+                .width(100.dp)
                 .height(120.dp),
-            contentScale = ContentScale.Crop
-        )
-        Spacer(modifier = Modifier.height(4.dp))
+            contentAlignment = Alignment.Center
+        ) {
+            AsyncImage(
+                model = book["bookCover"] as? String ?: "",
+                contentDescription = "Book Image",
+                modifier = Modifier.fillMaxSize(),
+                contentScale = ContentScale.Fit
+            )
+        }
+        
+        Spacer(modifier = Modifier.height(8.dp))
+        
         Text(
-            text = book["bookTitle"] as? String ?: "",
-            fontSize = 14.sp,
+            text = bookTitle,
+            fontSize = 13.sp,
             fontWeight = FontWeight.Bold,
             maxLines = 2,
             textAlign = TextAlign.Center
         )
+        
         Text(
-            text = book["studentName"] as? String ?: "",
-            fontSize = 12.sp,
+            text = authorName,
+            fontSize = 11.sp,
+            color = Color.Gray,
+            maxLines = 1,
+            textAlign = TextAlign.Center
+        )
+        
+        Spacer(modifier = Modifier.height(8.dp))
+        
+        Text(
+            text = "Ngày mượn: $currentDate",
+            fontSize = 11.sp,
             color = Color.Gray
         )
+        
         Text(
-            text = "Ngày mượn: ${book["borrowDate"] as? String ?: ""}",
-            fontSize = 12.sp,
-            color = Color.Gray
-        )
-        Text(
-            text = "Ngày trả: ${book["expectedReturnDate"] as? String ?: ""}",
-            fontSize = 12.sp,
+            text = "Ngày trả dự kiến: $expectedReturnDate",
+            fontSize = 11.sp,
             color = Color.Gray
         )
     }

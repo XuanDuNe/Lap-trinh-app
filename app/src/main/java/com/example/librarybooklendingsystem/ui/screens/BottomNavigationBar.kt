@@ -42,7 +42,9 @@ fun BottomNavigationBar(navController: NavController) {
             selected = selectedItem == 0,
             onClick = {
                 selectedItem = 0
-                navController.navigate("home")
+                navController.navigate("home") {
+                    popUpTo(0) { inclusive = true }
+                }
             }
         )
 
@@ -59,7 +61,9 @@ fun BottomNavigationBar(navController: NavController) {
             selected = selectedItem == 1,
             onClick = {
                 selectedItem = 1
-                navController.navigate("category")
+                navController.navigate("category") {
+                    popUpTo(0) { inclusive = true }
+                }
             }
         )
 
@@ -77,7 +81,10 @@ fun BottomNavigationBar(navController: NavController) {
             onClick = {
                 selectedItem = 2
                 if (AuthState.isLoggedIn) {
-                    navController.navigate("account")
+                    navController.navigate("account") {
+                        popUpTo("home")
+                        launchSingleTop = true
+                    }
                 } else {
                     showLoginDialog = true
                 }
@@ -98,7 +105,9 @@ fun BottomNavigationBar(navController: NavController) {
                 selected = selectedItem == 3,
                 onClick = {
                     selectedItem = 3
-                    navController.navigate("admin_dashboard")
+                    navController.navigate("admin_dashboard") {
+                        popUpTo(0) { inclusive = true }
+                    }
                 }
             )
         }

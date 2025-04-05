@@ -1,6 +1,8 @@
 package com.example.librarybooklendingsystem.data
 
 import android.util.Log
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.ktx.auth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.SetOptions
 import com.google.firebase.firestore.ktx.firestore
@@ -10,6 +12,7 @@ import java.util.*
 
 object FirebaseManager {
     private val db: FirebaseFirestore = Firebase.firestore
+    private val auth: FirebaseAuth = Firebase.auth
 
     // Collection names
     private const val USERS_COLLECTION = "users"
@@ -31,6 +34,14 @@ object FirebaseManager {
         const val RETURNED = "returned"
     }
 
+    // Tạo short ID cho người dùng
+    private fun generateShortId(): String {
+        val allowedChars = ('A'..'Z') + ('0'..'9')
+        return (1..6)
+            .map { allowedChars.random() }
+            .joinToString("")
+    }
+
     // User operations
     suspend fun createUser(userId: String, email: String, role: String = "user"): Boolean {
         return try {
@@ -49,6 +60,30 @@ object FirebaseManager {
             Log.e("FirebaseManager", "Error creating user: ${e.message}")
             false
         }
+    }
+
+    // Thêm phương thức mới để lấy thông tin người dùng
+    suspend fun getUserInfo(userId: String): Map<String, Any>? {
+        return try {
+            val document = db.collection(USERS_COLLECTION)
+                .document(userId)
+                .get()
+                .await()
+            
+            if (document.exists()) {
+                document.data
+            } else {
+                null
+            }
+        } catch (e: Exception) {
+            Log.e("FirebaseManager", "Lỗi khi lấy thông tin người dùng: ${e.message}")
+            null
+        }
+    }
+
+    // Thêm phương thức getUserData để tương thích với BorrowBookScreen
+    suspend fun getUserData(userId: String): Map<String, Any>? {
+        return getUserInfo(userId)
     }
 
     suspend fun getUserRole(userId: String): String? {
@@ -242,7 +277,8 @@ object FirebaseManager {
     // Borrow operations
     suspend fun createBorrowRequest(borrowData: Map<String, Any>): String? {
         return try {
-            Log.d("FirebaseManager", "Tạo yêu cầu mượn sách: $borrowData")
+            Log.d("FirebaseManager", "Tạo yêu cầu mượn sách với dữ liệu: $borrowData")
+            Log.d("FirebaseManager", "Tên tác giả trong yêu cầu: ${borrowData["author_name"]}")
 
             // Kiểm tra user đã đăng nhập
             val userId = borrowData["userId"] as? String
@@ -291,6 +327,12 @@ object FirebaseManager {
 
             val borrowedBooks = snapshot.documents.map { doc ->
                 val data = doc.data ?: emptyMap()
+                Log.d("FirebaseManager", "Dữ liệu gốc của yêu cầu mượn: $data")
+                Log.d("FirebaseManager", "Tên tác giả trong dữ liệu: ${data["author_name"]}")
+
+                val authorName = data["author_name"] as? String
+                Log.d("FirebaseManager", "Tên tác giả sau khi xử lý: $authorName")
+
                 mapOf(
                     "borrowId" to doc.id,
                     "bookId" to (data["bookId"] as? String ?: ""),
@@ -299,11 +341,14 @@ object FirebaseManager {
                     "studentName" to (data["studentName"] as? String ?: ""),
                     "expectedReturnDate" to (data["expectedReturnDate"] as? String ?: ""),
                     "status" to (data["status"] as? String ?: ""),
-                    "borrowDate" to (data["borrowDate"] as? Long ?: 0L)
-                )
+                    "borrowDate" to (data["borrowDate"] as? Long ?: 0L),
+                    "author_name" to (authorName ?: "Không có tác giả")
+                ).also {
+                    Log.d("FirebaseManager", "Dữ liệu sau khi map: $it")
+                }
             }
 
-            Log.d("FirebaseManager", "Đã tìm thấy ${borrowedBooks.size} sách đã mượn")
+            Log.d("FirebaseManager", "Tổng số sách đã mượn: ${borrowedBooks.size}")
             borrowedBooks
         } catch (e: Exception) {
             Log.e("FirebaseManager", "Lỗi khi lấy danh sách sách đã mượn: ${e.message}")
@@ -328,6 +373,41 @@ object FirebaseManager {
         } catch (e: Exception) {
             Log.e("FirebaseManager", "Error creating admin: ${e.message}")
             false
+        }
+    }
+
+    // Đăng ký user với short ID
+    suspend fun registerUserWithShortId(email: String, password: String, name: String): String? {
+        return try {
+            // Tạo user với email và password
+            val result = auth.createUserWithEmailAndPassword(email, password).await()
+            val user = result.user
+
+            if (user != null) {
+                // Tạo short ID
+                val shortId = generateShortId()
+                
+                // Lưu thông tin user vào Firestore
+                val userData = mapOf(
+                    "email" to email,
+                    "role" to "user",
+                    "shortId" to shortId,
+                    "name" to name,  // Thêm tên người dùng
+                    "createdAt" to Date()
+                )
+
+                db.collection(USERS_COLLECTION)
+                    .document(user.uid)
+                    .set(userData)
+                    .await()
+
+                shortId
+            } else {
+                null
+            }
+        } catch (e: Exception) {
+            Log.e("FirebaseManager", "Lỗi khi đăng ký user: ${e.message}")
+            throw e
         }
     }
 } 

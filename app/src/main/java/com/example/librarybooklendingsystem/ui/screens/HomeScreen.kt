@@ -76,7 +76,7 @@ fun HomeScreen(
             } else {
                 books.filter { book ->
                     book.title.contains(searchQuery, ignoreCase = true) ||
-                    book.author.contains(searchQuery, ignoreCase = true) ||
+                    book.author_name.contains(searchQuery, ignoreCase = true) ||
                     book.category.contains(searchQuery, ignoreCase = true)
                 }
             }
@@ -271,11 +271,23 @@ fun FirebaseBookItem(
                     .height(140.dp),
                 contentScale = ContentScale.Crop
             )
-            Text(
-                text = book.title,
-                modifier = Modifier.padding(8.dp),
-                maxLines = 2
-            )
+            Column(
+                modifier = Modifier.padding(8.dp)
+            ) {
+                Text(
+                    text = book.title,
+                    maxLines = 1,
+                    fontSize = 12.sp,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Text(
+                    text = book.author_name,
+                    maxLines = 1,
+                    fontSize = 10.sp,
+                    color = Color.Gray,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
         }
     }
 }
@@ -293,7 +305,7 @@ fun FirebaseBookItemPreview() {
     val book = Book(
         id = "1",
         title = "Sample Book",
-        author = "Author",
+        author_name = "Author",
         category = "Category",
         status = "Có sẵn",
         coverUrl = "",

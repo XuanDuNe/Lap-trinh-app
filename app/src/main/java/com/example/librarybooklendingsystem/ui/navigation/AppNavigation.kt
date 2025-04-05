@@ -4,22 +4,76 @@ import androidx.compose.runtime.Composable
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import com.example.librarybooklendingsystem.ui.screens.BorrowBookScreen
-import com.example.librarybooklendingsystem.ui.screens.AccountScreen
+import com.example.librarybooklendingsystem.ui.screens.*
 
 @Composable
 fun AppNavigation(navController: NavHostController) {
-    NavHost(navController, startDestination = "borrowBook") {
-        // Màn hình Mượn Sách
-        composable("borrowBook") {
-            BorrowBookScreen(navController = navController)
+    NavHost(navController, startDestination = "home") {
+        // Màn hình Trang chủ
+        composable("home") {
+            HomeScreen(navController = navController)
         }
 
-        // Màn hình Cá Nhân
+        // Màn hình Danh mục
+        composable("category") {
+            CategoryScreen(navController = navController)
+        }
+
+        // Màn hình Cá nhân
         composable("account") {
             AccountScreen(navController = navController)
         }
 
-        // Bạn có thể thêm các composable khác tương tự ở đây nếu có
+        // Màn hình Mượn sách
+        composable("borrowBook/{bookId}") { backStackEntry ->
+            val bookId = backStackEntry.arguments?.getString("bookId") ?: ""
+            BorrowBookScreen(navController = navController, bookId = bookId)
+        }
+
+        // Màn hình Chi tiết sách
+        composable("bookDetails/{bookId}") { backStackEntry ->
+            val bookId = backStackEntry.arguments?.getString("bookId") ?: ""
+            BookDetailsScreen(navController = navController, bookId = bookId)
+        }
+
+        // Màn hình Đăng nhập
+        composable("login") {
+            LoginScreen(navController = navController)
+        }
+
+        // Màn hình Đăng ký
+        composable("signup") {
+            SignUpScreen(navController = navController)
+        }
+
+        // Màn hình Admin Dashboard
+        composable("admin_dashboard") {
+            AdminDashboardScreen(navController = navController)
+        }
+
+        // Các màn hình thống kê
+        composable("library_stats") {
+            LibraryStatsScreen(navController = navController)
+        }
+
+        composable("user_stats") {
+            UserStatsScreen(navController = navController)
+        }
+
+        composable("borrowed_books_stats") {
+            BorrowedBooksStatsScreen(navController = navController)
+        }
+
+        composable("returned_books_stats") {
+            ReturnedBooksStatsScreen(navController = navController)
+        }
+
+        composable("pending_books_approval") {
+            PendingBooksApprovalScreen(navController = navController)
+        }
+
+        composable("account_management") {
+            AccountManagementScreen(navController = navController)
+        }
     }
 }

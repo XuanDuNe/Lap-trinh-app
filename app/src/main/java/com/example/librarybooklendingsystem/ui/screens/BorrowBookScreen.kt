@@ -1,5 +1,6 @@
 package com.example.librarybooklendingsystem.ui.screens
 
+import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -29,6 +30,7 @@ import com.example.librarybooklendingsystem.ui.screens.AuthState
 import coil.compose.AsyncImage
 import com.example.librarybooklendingsystem.ui.components.CommonHeader
 import kotlinx.coroutines.launch
+import java.text.SimpleDateFormat
 import java.util.*
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -44,12 +46,21 @@ fun BorrowBookScreen(
     var isLoading by remember { mutableStateOf(false) }
     var showError by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf("") }
+    var currentUserName by remember { mutableStateOf("") }
 
-    // Load book data if bookId is provided
+    // Load book data and user data if bookId is provided
     LaunchedEffect(bookId) {
         if (bookId != null) {
             scope.launch {
                 book = FirebaseManager.getBookById(bookId)
+                
+                // Lấy thông tin người dùng hiện tại
+                val userId = AuthState.currentUserId
+                if (userId != null) {
+                    val userData = FirebaseManager.getUserData(userId)
+                    currentUserName = userData?.get("name") as? String ?: ""
+                    Log.d("BorrowBookScreen", "Tên người dùng hiện tại: $currentUserName")
+                }
             }
         }
     }
@@ -94,7 +105,7 @@ fun BorrowBookScreen(
                         .size(220.dp)
                         .padding(bottom = 16.dp)
                         .offset(y = 50.dp),
-                    contentScale = ContentScale.Crop
+                    contentScale = ContentScale.Fit
                 )
 
                 Spacer(modifier = Modifier.height(50.dp))
@@ -103,6 +114,14 @@ fun BorrowBookScreen(
                 Text(
                     text = book!!.title,
                     style = MaterialTheme.typography.titleMedium,
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
+
+                // Tên tác giả
+                Text(
+                    text = book!!.author_name,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = Color.Gray,
                     modifier = Modifier.padding(bottom = 16.dp)
                 )
             } else {
@@ -157,9 +176,44 @@ fun BorrowBookScreen(
                         return@Button
                     }
 
+                    // Kiểm tra tên người mượn có khớp với tên tài khoản không
+                    if (currentUserName.isNotEmpty() && studentName.value.text != currentUserName) {
+                        errorMessage = "Tên người mượn phải trùng với tên tài khoản đã đăng ký"
+                        showError = true
+                        return@Button
+                    }
+
+                    // Kiểm tra ngày trả dự kiến có lớn hơn ngày hiện tại không
+                    try {
+                        val dateFormat = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
+                        val returnDate = dateFormat.parse(expectedReturnDate.value.text)
+                        val currentDate = Date()
+                        
+                        if (returnDate != null && returnDate.before(currentDate)) {
+                            errorMessage = "Ngày trả dự kiến phải lớn hơn ngày hiện tại"
+                            showError = true
+                            return@Button
+                        }
+                    } catch (e: Exception) {
+                        errorMessage = "Định dạng ngày không hợp lệ. Vui lòng nhập theo định dạng dd/MM/yyyy"
+                        showError = true
+                        return@Button
+                    }
+
                     scope.launch {
                         isLoading = true
                         try {
+                            // Lấy thông tin sách từ Firebase
+                            val bookDetails = FirebaseManager.getBookById(bookId ?: "")
+                            Log.d("BorrowBookScreen", "Thông tin sách từ Firebase: $bookDetails")
+                            Log.d("BorrowBookScreen", "Tên tác giả: ${bookDetails?.author_name}")
+                            
+                            if (bookDetails == null) {
+                                errorMessage = "Không tìm thấy thông tin sách"
+                                showError = true
+                                return@launch
+                            }
+
                             val borrowData = mapOf(
                                 "userId" to (AuthState.currentUserId ?: ""),
                                 "bookId" to (bookId ?: ""),
@@ -167,15 +221,21 @@ fun BorrowBookScreen(
                                 "expectedReturnDate" to expectedReturnDate.value.text,
                                 "status" to FirebaseManager.BorrowStatus.PENDING,
                                 "borrowDate" to Date(),
-                                "bookTitle" to (book?.title ?: ""),
-                                "bookCover" to (book?.coverUrl ?: "")
+                                "bookTitle" to bookDetails.title,
+                                "bookCover" to bookDetails.coverUrl,
+                                "author_id" to bookDetails.author_id,
+                                "author_name" to bookDetails.author_name
                             )
+                            
+                            Log.d("BorrowBookScreen", "Dữ liệu mượn sách sẽ lưu: $borrowData")
 
                             FirebaseManager.createBorrowRequest(borrowData)
                             navController.navigate("account") {
                                 popUpTo("borrowbook/${bookId}") { inclusive = true }
                             }
                         } catch (e: Exception) {
+                            Log.e("BorrowBookScreen", "Lỗi khi mượn sách: ${e.message}")
+                            Log.e("BorrowBookScreen", "Stack trace: ${e.stackTraceToString()}")
                             errorMessage = e.message ?: "Đã xảy ra lỗi khi gửi yêu cầu mượn sách"
                             showError = true
                         } finally {

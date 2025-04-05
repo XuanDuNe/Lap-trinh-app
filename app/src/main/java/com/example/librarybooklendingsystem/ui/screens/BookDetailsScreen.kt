@@ -98,7 +98,7 @@ fun BookDetailsScreen(
                         .padding(16.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Text("Tác giả: ${book?.author ?: ""}", fontSize = 14.sp, color = Color.Black)
+                    Text("Tác giả: ${book?.author_name ?: ""}", fontSize = 14.sp, color = Color.Black)
                     Text("Thể loại: ${book?.category ?: ""}", fontSize = 14.sp, color = Color.Black)
                     Text("Trạng thái sách: ${book?.status ?: ""}", fontSize = 14.sp, color = Color.Black)
                     Spacer(modifier = Modifier.height(16.dp))
@@ -183,7 +183,7 @@ fun RelatedBookItem(book: Book, navController: NavController) {
     Card(
         modifier = Modifier
             .width(120.dp)
-            .height(180.dp)
+            .height(200.dp)
             .clickable {
                 navController.navigate("bookDetails/${book.id}")
             },
@@ -198,12 +198,22 @@ fun RelatedBookItem(book: Book, navController: NavController) {
                     .height(140.dp),
                 contentScale = ContentScale.Crop
             )
-            Text(
-                text = book.title,
-                modifier = Modifier.padding(8.dp),
-                maxLines = 2,
-                fontSize = 12.sp
-            )
+            Column(
+                modifier = Modifier.padding(8.dp)
+            ) {
+                Text(
+                    text = book.title,
+                    maxLines = 2,
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Bold
+                )
+                Text(
+                    text = book.author_name,
+                    maxLines = 1,
+                    fontSize = 10.sp,
+                    color = Color.Gray
+                )
+            }
         }
     }
 }

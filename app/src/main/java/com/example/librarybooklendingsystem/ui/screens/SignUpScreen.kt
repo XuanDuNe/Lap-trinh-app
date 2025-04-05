@@ -2,9 +2,11 @@ package com.example.librarybooklendingsystem.ui.screens
 
 import android.widget.Toast
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.*
@@ -18,12 +20,16 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.example.librarybooklendingsystem.R
+import com.example.librarybooklendingsystem.data.FirebaseManager
+import com.example.librarybooklendingsystem.ui.components.CommonHeader
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.firestore.FirebaseFirestore
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -35,177 +41,177 @@ fun SignUpScreen(navController: NavController) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var confirmPassword by remember { mutableStateOf("") }
-    var passwordVisible by remember { mutableStateOf(false) }
-    var confirmPasswordVisible by remember { mutableStateOf(false) }
+    var name by remember { mutableStateOf("") }
     var errorMessage by remember { mutableStateOf("") }
+    var showError by remember { mutableStateOf(false) }
+    var isLoading by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
 
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
+            .background(Color.White)
     ) {
-        // Logo
-        Image(
-            painter = painterResource(id = R.drawable.logouth),
-            contentDescription = "Logo",
-            modifier = Modifier
-                .size(150.dp)
-                .padding(bottom = 16.dp)
+        CommonHeader(
+            title = "Đăng ký",
+            onBackClick = { navController.navigateUp() },
+            onShareClick = { /* Share action */ }
         )
 
-        Text(
-            text = "Welcome! Create your",
-            style = MaterialTheme.typography.headlineMedium
-        )
-
-        Text(
-            text = "new account now.",
-            style = MaterialTheme.typography.headlineMedium,
-            modifier = Modifier.padding(bottom = 32.dp)
-        )
-
-        // Email input field
-        OutlinedTextField(
-            value = email,
-            onValueChange = { email = it },
-            label = { Text("Enter your email") },
+        Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(bottom = 16.dp)
-        )
-
-        // Password input field
-        OutlinedTextField(
-            value = password,
-            onValueChange = { password = it },
-            label = { Text("Enter your password") },
-            visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 16.dp),
-            trailingIcon = {
-                IconButton(onClick = { passwordVisible = !passwordVisible }) {
-                    Icon(
-                        imageVector = if (passwordVisible) Icons.Filled.Person else Icons.Filled.Lock,
-                        contentDescription = if (passwordVisible) "Hide password" else "Show password",
-                        tint = Color(0xFF0093AB)
-                    )
-                }
-            }
-        )
-
-        // Confirm password input field
-        OutlinedTextField(
-            value = confirmPassword,
-            onValueChange = { confirmPassword = it },
-            label = { Text("Enter your password again") },
-            visualTransformation = if (confirmPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 24.dp),
-            trailingIcon = {
-                IconButton(onClick = { confirmPasswordVisible = !confirmPasswordVisible }) {
-                    Icon(
-                        imageVector = if (confirmPasswordVisible) Icons.Filled.Person else Icons.Filled.Lock,
-                        contentDescription = if (confirmPasswordVisible) "Hide password" else "Show password",
-                        tint = Color(0xFF0093AB)
-                    )
-                }
-            }
-        )
-
-        // Display error message if any
-        if (errorMessage.isNotEmpty()) {
-            Text(
-                text = errorMessage,
-                color = Color.Red,
-                style = MaterialTheme.typography.bodySmall,
-                modifier = Modifier.padding(bottom = 8.dp)
+                .padding(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            // Logo
+            Image(
+                painter = painterResource(id = R.drawable.logouth),
+                contentDescription = "Logo",
+                modifier = Modifier
+                    .size(120.dp)
+                    .padding(vertical = 16.dp)
             )
-        }
 
-        // Sign-up button
-        Button(
-            onClick = {
-                // Kiểm tra điều kiện hợp lệ trước khi đăng ký
-                if (email.isEmpty() || password.isEmpty() || confirmPassword.isEmpty()) {
-                    errorMessage = "Please fill in all fields."
-                    return@Button
-                }
+            // Ô nhập họ và tên
+            OutlinedTextField(
+                value = name,
+                onValueChange = { name = it },
+                label = { Text("Họ và tên") },
+                leadingIcon = {
+                    Icon(Icons.Filled.Person, contentDescription = null)
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 8.dp),
+                shape = RoundedCornerShape(12.dp)
+            )
 
-                if (!android.util.Patterns.EMAIL_ADDRESS.matcher(email.trim()).matches()) {
-                    errorMessage = "Invalid email format."
-                    return@Button
-                }
+            // Ô nhập email
+            OutlinedTextField(
+                value = email,
+                onValueChange = { email = it },
+                label = { Text("Email") },
+                leadingIcon = {
+                    Icon(Icons.Filled.Email, contentDescription = null)
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 8.dp),
+                shape = RoundedCornerShape(12.dp)
+            )
 
-                if (password.length < 6) {
-                    errorMessage = "Password must be at least 6 characters."
-                    return@Button
-                }
+            // Ô nhập mật khẩu
+            OutlinedTextField(
+                value = password,
+                onValueChange = { password = it },
+                label = { Text("Mật khẩu") },
+                leadingIcon = {
+                    Icon(Icons.Filled.Lock, contentDescription = null)
+                },
+                visualTransformation = PasswordVisualTransformation(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 8.dp),
+                shape = RoundedCornerShape(12.dp)
+            )
 
-                if (password != confirmPassword) {
-                    errorMessage = "Passwords do not match."
-                    return@Button
-                }
+            // Ô nhập lại mật khẩu
+            OutlinedTextField(
+                value = confirmPassword,
+                onValueChange = { confirmPassword = it },
+                label = { Text("Xác nhận mật khẩu") },
+                leadingIcon = {
+                    Icon(Icons.Filled.Lock, contentDescription = null)
+                },
+                visualTransformation = PasswordVisualTransformation(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 8.dp),
+                shape = RoundedCornerShape(12.dp)
+            )
 
-                // Firebase Auth sign-up logic
-                auth.createUserWithEmailAndPassword(email, password)
-                    .addOnCompleteListener { task ->
-                        if (task.isSuccessful) {
-                            val user: FirebaseUser? = auth.currentUser
-                            if (user != null) {
-                                // Lưu thông tin user role vào Firestore
-                                val userRef = db.collection("users").document(user.uid)
-                                userRef.set(mapOf("role" to "user"))
-                                    .addOnSuccessListener {
-                                        Toast.makeText(
-                                            context,
-                                            "Account created successfully!",
-                                            Toast.LENGTH_SHORT
-                                        ).show()
-                                        // Navigate to login screen after successful sign-up
-                                        navController.navigate("login") {
-                                            popUpTo("signup") { inclusive = true }
-                                        }
-                                    }
-                                    .addOnFailureListener { e ->
-                                        errorMessage = "Error saving user data: ${e.localizedMessage}"
-                                    }
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // Nút đăng ký
+            Button(
+                onClick = {
+                    if (name.isEmpty() || email.isEmpty() || password.isEmpty() || confirmPassword.isEmpty()) {
+                        errorMessage = "Vui lòng điền đầy đủ thông tin"
+                        showError = true
+                        return@Button
+                    }
+
+                    if (password != confirmPassword) {
+                        errorMessage = "Mật khẩu không khớp"
+                        showError = true
+                        return@Button
+                    }
+
+                    scope.launch {
+                        isLoading = true
+                        try {
+                            // Đăng ký với Firebase
+                            val userId = FirebaseManager.registerUserWithShortId(email, password, name)
+                            if (userId != null) {
+                                // Đăng ký thành công
+                                navController.navigate("login") {
+                                    popUpTo("signup") { inclusive = true }
+                                }
+                            } else {
+                                errorMessage = "Đăng ký thất bại"
+                                showError = true
                             }
-                        } else {
-                            errorMessage = task.exception?.localizedMessage ?: "Sign up failed. Please try again."
+                        } catch (e: Exception) {
+                            errorMessage = e.message ?: "Đã xảy ra lỗi"
+                            showError = true
+                        } finally {
+                            isLoading = false
                         }
                     }
-            },
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(55.dp)
-                .padding(horizontal = 16.dp),
-            colors = ButtonDefaults.buttonColors(
-                containerColor = Color(0xFF0093AB)
-            ),
-            shape = RoundedCornerShape(12.dp)
-        ) {
-            Text(
-                "Sign up",
-                style = MaterialTheme.typography.bodyLarge
-            )
-        }
+                },
+                modifier = Modifier
+                    .width(250.dp)
+                    .height(60.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color(0xFF0093AB)
+                ),
+                enabled = !isLoading
+            ) {
+                if (isLoading) {
+                    CircularProgressIndicator(
+                        color = Color.White,
+                        modifier = Modifier.size(24.dp)
+                    )
+                } else {
+                    Text(text = "Đăng ký", fontSize = 20.sp)
+                }
+            }
 
-        // Navigation to login screen if the user already has an account
-        Row(
-            modifier = Modifier.padding(top = 16.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text("Have an account? ")
-            TextButton(onClick = { navController.navigate("login") }) {
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Link chuyển đến trang đăng nhập
+            TextButton(
+                onClick = { navController.navigate("login") }
+            ) {
                 Text(
-                    "Sign In",
+                    text = "Đã có tài khoản? Đăng nhập",
                     color = Color(0xFF0093AB)
                 )
             }
         }
+    }
+
+    if (showError) {
+        AlertDialog(
+            onDismissRequest = { showError = false },
+            title = { Text("Lỗi") },
+            text = { Text(errorMessage) },
+            confirmButton = {
+                TextButton(onClick = { showError = false }) {
+                    Text("Đóng")
+                }
+            }
+        )
     }
 }
