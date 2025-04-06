@@ -1,117 +1,125 @@
 package com.example.librarybooklendingsystem.ui.screens
 
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
-import androidx.compose.runtime.collectAsState
+import androidx.navigation.NavGraph.Companion.findStartDestination
+import com.example.librarybooklendingsystem.data.AuthState
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun BottomNavigationBar(navController: NavController) {
+fun BottomNavigationBar(
+    navController: NavController,
+    onOpenDrawer: () -> Unit = {}
+) {
     var selectedItem by remember { mutableStateOf(0) }
     var showLoginDialog by remember { mutableStateOf(false) }
-    val userRole by AuthState.currentUserRole.collectAsState(initial = null)
-
-    if (showLoginDialog) {
-        LoginRequiredDialog(
-            onDismiss = { showLoginDialog = false },
-            navController = navController
-        )
+    
+    val isAdmin = produceState(initialValue = false) {
+        AuthState.isAdmin.collect { 
+            value = it
+        }
+    }
+    
+    val userRole = produceState<String?>(initialValue = null) {
+        AuthState.currentUserRole.collect { 
+            value = it
+        }
     }
 
-    NavigationBar(
-        containerColor = Color(0xFFD3D3D3),
-        contentColor = Color(0xFF0B8FAC)
-    ) {
-        // Trang chủ
-        NavigationBarItem(
-            icon = {
-                Icon(
-                    Icons.Filled.Home,
-                    contentDescription = "Trang chủ",
-                    modifier = Modifier.size(32.dp)
-                )
-            },
-            label = { Text("Trang chủ") },
-            selected = selectedItem == 0,
-            onClick = {
-                selectedItem = 0
-                navController.navigate("home") {
-                    popUpTo(0) { inclusive = true }
-                }
-            }
-        )
+    val items = listOfNotNull(
+        BottomNavItem("Trang chủ", Icons.Default.Home, "home"),
+        BottomNavItem("Danh mục", Icons.Default.List, "drawer"),
+        if (isAdmin.value) BottomNavItem("Thống kê", Icons.Default.Settings, "admin_dashboard") else null,
+        BottomNavItem("Cá nhân", Icons.Default.Person, "account")
+    ).filterNotNull()
 
-        // Danh mục
-        NavigationBarItem(
-            icon = {
-                Icon(
-                    Icons.Filled.List,
-                    contentDescription = "Danh mục",
-                    modifier = Modifier.size(38.dp)
-                )
-            },
-            label = { Text("Danh mục") },
-            selected = selectedItem == 1,
-            onClick = {
-                selectedItem = 1
-                navController.navigate("category") {
-                    popUpTo(0) { inclusive = true }
-                }
-            }
-        )
-
-        // Cá nhân
-        NavigationBarItem(
-            icon = {
-                Icon(
-                    Icons.Filled.Person,
-                    contentDescription = "Cá nhân",
-                    modifier = Modifier.size(32.dp)
-                )
-            },
-            label = { Text("Cá nhân") },
-            selected = selectedItem == 2,
-            onClick = {
-                selectedItem = 2
-                if (AuthState.isLoggedIn) {
-                    navController.navigate("account") {
-                        popUpTo("home")
-                        launchSingleTop = true
-                    }
-                } else {
-                    showLoginDialog = true
-                }
-            }
-        )
-
-        // Thống kê (chỉ hiển thị cho admin)
-        if (userRole == "admin") {
+    NavigationBar {
+        items.forEachIndexed { index, item ->
             NavigationBarItem(
-                icon = {
+                icon = { 
                     Icon(
-                        Icons.Filled.Settings,
-                        contentDescription = "Thống kê",
+                        imageVector = item.icon,
+                        contentDescription = item.title,
                         modifier = Modifier.size(32.dp)
                     )
                 },
-                label = { Text("Thống kê") },
-                selected = selectedItem == 3,
+                label = { Text(item.title) },
+                selected = selectedItem == index,
                 onClick = {
-                    selectedItem = 3
-                    navController.navigate("admin_dashboard") {
-                        popUpTo(0) { inclusive = true }
+                    when (item.route) {
+                        "drawer" -> {
+                            onOpenDrawer()
+                        }
+                        "home" -> {
+                            selectedItem = index
+                            navController.navigate("home") {
+                                popUpTo(0) { inclusive = true }
+                                launchSingleTop = true
+                            }
+                        }
+                        "admin_dashboard" -> {
+                            if (isAdmin.value) {
+                                selectedItem = index
+                                navigateToTab(navController, item.route)
+                            }
+                        }
+                        "account" -> {
+                            if (AuthState.isLoggedIn) {
+                                selectedItem = index
+                                navigateToTab(navController, item.route)
+                            } else {
+                                showLoginDialog = true
+                            }
+                        }
                     }
                 }
             )
         }
     }
+
+    if (showLoginDialog) {
+        AlertDialog(
+            onDismissRequest = { showLoginDialog = false },
+            title = { Text("Thông báo") },
+            text = { Text("Vui lòng đăng nhập để truy cập") },
+            confirmButton = {
+                TextButton(onClick = {
+                    showLoginDialog = false
+                    navController.navigate("login")
+                }) {
+                    Text("Đăng nhập")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showLoginDialog = false }) {
+                    Text("Hủy")
+                }
+            }
+        )
+    }
 }
+
+private fun navigateToTab(navController: NavController, route: String) {
+    navController.navigate(route) {
+        popUpTo(navController.graph.findStartDestination().id) {
+            saveState = true
+        }
+        launchSingleTop = true
+        restoreState = true
+    }
+}
+
+data class BottomNavItem(
+    val title: String,
+    val icon: ImageVector,
+    val route: String
+)
 
 

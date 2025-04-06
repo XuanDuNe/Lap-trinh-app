@@ -6,6 +6,7 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material3.*
@@ -16,6 +17,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
@@ -24,15 +26,12 @@ import com.example.librarybooklendingsystem.data.Book
 import com.example.librarybooklendingsystem.data.FirebaseManager
 import com.example.librarybooklendingsystem.ui.components.CommonHeader
 import kotlinx.coroutines.launch
+import androidx.compose.ui.text.font.FontStyle
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun BookDetailsScreen(
-    navController: NavController,
-    bookId: String
-) {
+fun BookDetailsScreen(navController: NavController, bookId: String) {
     var book by remember { mutableStateOf<Book?>(null) }
-    var showLoginDialog by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
 
     LaunchedEffect(bookId) {
@@ -41,104 +40,115 @@ fun BookDetailsScreen(
         }
     }
 
-    if (showLoginDialog) {
-        LoginRequiredDialog(
-            onDismiss = { showLoginDialog = false },
-            navController = navController
-        )
-    }
+    Scaffold(
+        topBar = {
+            CommonHeader(
+                title = "Chi tiết sách",
+                onBackClick = { navController.navigateUp() },
+                onShareClick = { /* TODO: Implement share */ }
+            )
+        }
+    ) { paddingValues ->
+        if (book != null) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues)
+                    .verticalScroll(rememberScrollState())
+            ) {
+                Spacer(modifier = Modifier.height(16.dp))
+                
+                // Book Cover and Basic Info
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(300.dp)
+                        .background(Color(0xFFF5F5F5))
+                ) {
+                    AsyncImage(
+                        model = book?.coverUrl,
+                        contentDescription = "Book cover",
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(300.dp),
+                        contentScale = ContentScale.Fit
+                    )
+                }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color.White)
-    ) {
-        CommonHeader(
-            title = "Chi tiết sách",
-            onBackClick = { navController.navigateUp() },
-            onShareClick = { /* TODO: Share book */ }
-        )
+                // Book Details
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(
+                        text = book?.title ?: "",
+                        fontSize = 24.sp,
+                        fontWeight = FontWeight.Bold,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = "Tác giả: ${book?.author_name}",
+                        fontSize = 16.sp,
+                        color = Color.Gray,
+                        fontStyle = FontStyle.Italic
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = "Thể loại: ${book?.category}",
+                        fontSize = 16.sp,
+                        color = Color.Gray,
+                        fontStyle = FontStyle.Italic
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = "Trạng thái: ${book?.status}",
+                        fontSize = 16.sp,
+                        color = when (book?.status) {
+                            "Có sẵn" -> Color(0xFF4CAF50)
+                            else -> Color(0xFFE53935)
+                        },
+                        fontStyle = FontStyle.Italic
+                    )
 
-        if (book == null) {
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Button(
+                        onClick = { 
+                            navController.navigate("borrowBook/${book?.id}")
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(56.dp),
+                        shape = RoundedCornerShape(8.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color(0xFF0288D1)
+                        ),
+                        enabled = book?.status == "Có sẵn"
+                    ) {
+                        Text(
+                            text = if (book?.status == "Có sẵn") "Mượn sách" else "Không có sẵn",
+                            fontSize = 18.sp
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(24.dp))
+                    book?.category?.let { category ->
+                        RelatedBooksSection(category, navController)
+                    }
+
+                    Spacer(modifier = Modifier.height(24.dp))
+                    BookInfoSection(book?.description ?: "")
+                }
+            }
+        } else {
             Box(
                 modifier = Modifier.fillMaxSize(),
                 contentAlignment = Alignment.Center
             ) {
                 CircularProgressIndicator()
-            }
-        } else {
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .verticalScroll(rememberScrollState()),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Spacer(modifier = Modifier.height(30.dp))
-                AsyncImage(
-                    model = book?.coverUrl,
-                    contentDescription = "Book Image",
-                    modifier = Modifier
-                        .width(200.dp)
-                        .height(300.dp)
-                        .padding(top = 16.dp),
-                    contentScale = ContentScale.Crop
-                )
-                Spacer(modifier = Modifier.height(16.dp))
-
-                Text(
-                    text = book?.title ?: "",
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold
-                )
-
-
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(16.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Text("Tác giả: ${book?.author_name ?: ""}", fontSize = 14.sp, color = Color.Black)
-                    Text("Thể loại: ${book?.category ?: ""}", fontSize = 14.sp, color = Color.Black)
-                    Text("Trạng thái sách: ${book?.status ?: ""}", fontSize = 14.sp, color = Color.Black)
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    Button(
-                        onClick = {
-                            if (AuthState.isLoggedIn) {
-                                navController.navigate("borrowbook/${book?.id}")
-                            } else {
-                                showLoginDialog = true
-                            }
-                        },
-                        modifier = Modifier
-                            .fillMaxWidth(0.5f)
-                            .height(50.dp),
-                        shape = RoundedCornerShape(20.dp),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = Color(0xFF0093AB)
-                        ),
-                        border = BorderStroke(1.dp, Color.White)
-                    ) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text(text = "Mượn sách", fontSize = 14.sp, color = Color.White)
-                            Spacer(Modifier.width(6.dp))
-                            Icon(
-                                Icons.Outlined.FavoriteBorder,
-                                contentDescription = null,
-                                tint = Color.White
-                            )
-                        }
-                    }
-                }
-
-                book?.category?.let {
-                    RelatedBooksSection(it, navController)
-                }
-
-                book?.description?.let {
-                    BookInfoSection(it)
-                }
             }
         }
     }
@@ -183,7 +193,7 @@ fun RelatedBookItem(book: Book, navController: NavController) {
     Card(
         modifier = Modifier
             .width(120.dp)
-            .height(200.dp)
+            .height(180.dp)
             .clickable {
                 navController.navigate("bookDetails/${book.id}")
             },
@@ -199,19 +209,26 @@ fun RelatedBookItem(book: Book, navController: NavController) {
                 contentScale = ContentScale.Crop
             )
             Column(
-                modifier = Modifier.padding(8.dp)
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 8.dp, vertical = 4.dp)
             ) {
                 Text(
                     text = book.title,
-                    maxLines = 2,
+                    maxLines = 1,
                     fontSize = 12.sp,
-                    fontWeight = FontWeight.Bold
+                    fontWeight = FontWeight.Bold,
+                    overflow = TextOverflow.Ellipsis,
+                    lineHeight = 12.sp
                 )
                 Text(
                     text = book.author_name,
                     maxLines = 1,
                     fontSize = 10.sp,
-                    color = Color.Gray
+                    color = Color.Gray,
+                    overflow = TextOverflow.Ellipsis,
+                    lineHeight = 10.sp,
+                    modifier = Modifier.offset(y = (-2).dp)
                 )
             }
         }

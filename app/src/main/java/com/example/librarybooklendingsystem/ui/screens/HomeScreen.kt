@@ -90,7 +90,7 @@ fun HomeScreen(
             .background(Color.White)
     ) {
         CommonHeader(
-            title = "Trang chủ",
+            title = "My Library",
             onBackClick = { navController.navigateUp() },
             showShareButton = false
         )
@@ -102,7 +102,7 @@ fun HomeScreen(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp)
-                .padding(top = 16.dp),
+                .padding(top = 8.dp),
             placeholder = { Text("Tìm kiếm sách...") },
             leadingIcon = {
                 Icon(
@@ -123,7 +123,7 @@ fun HomeScreen(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp)
+                .padding(8.dp)
         ) {
             when (uiState) {
                 is BooksUiState.Loading -> {
@@ -179,14 +179,15 @@ fun HomeScreen(
                     } else {
                         Column(
                             modifier = Modifier
-                                .verticalScroll(scrollState)
+                                .verticalScroll(scrollState),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
                             // Banner
                             Card(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .height(200.dp)
-                                    .padding(16.dp),
+                                    .height(180.dp)
+                                    .padding(8.dp),
                                 colors = CardDefaults.cardColors(
                                     containerColor = Color.White
                                 ),
@@ -203,8 +204,8 @@ fun HomeScreen(
                             // Top 10 đọc nhiều
                             SectionHeader(title = "Top 10 đọc nhiều")
                             LazyRow(
-                                contentPadding = PaddingValues(horizontal = 16.dp),
-                                horizontalArrangement = Arrangement.spacedBy(16.dp)
+                                contentPadding = PaddingValues(horizontal = 8.dp),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
                             ) {
                                 items(filteredBooks.take(10)) { book ->
                                     FirebaseBookItem(
@@ -217,8 +218,8 @@ fun HomeScreen(
                             // Sách mới
                             SectionHeader(title = "Sách mới")
                             LazyRow(
-                                contentPadding = PaddingValues(horizontal = 16.dp),
-                                horizontalArrangement = Arrangement.spacedBy(16.dp)
+                                contentPadding = PaddingValues(horizontal = 8.dp),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
                             ) {
                                 items(filteredBooks.sortedByDescending { it.createdAt }.take(10)) { book ->
                                     FirebaseBookItem(
@@ -239,7 +240,7 @@ fun HomeScreen(
 fun SectionHeader(title: String) {
     Text(
         text = title,
-        modifier = Modifier.padding(16.dp),
+        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
         fontSize = 20.sp,
         fontWeight = FontWeight.Bold
     )
@@ -272,20 +273,26 @@ fun FirebaseBookItem(
                 contentScale = ContentScale.Crop
             )
             Column(
-                modifier = Modifier.padding(8.dp)
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 8.dp, vertical = 4.dp)
             ) {
                 Text(
                     text = book.title,
                     maxLines = 1,
                     fontSize = 12.sp,
-                    overflow = TextOverflow.Ellipsis
+                    fontWeight = FontWeight.Bold,
+                    overflow = TextOverflow.Ellipsis,
+                    lineHeight = 12.sp
                 )
                 Text(
                     text = book.author_name,
                     maxLines = 1,
                     fontSize = 10.sp,
                     color = Color.Gray,
-                    overflow = TextOverflow.Ellipsis
+                    overflow = TextOverflow.Ellipsis,
+                    lineHeight = 10.sp,
+                    modifier = Modifier.offset(y = (-2).dp)
                 )
             }
         }

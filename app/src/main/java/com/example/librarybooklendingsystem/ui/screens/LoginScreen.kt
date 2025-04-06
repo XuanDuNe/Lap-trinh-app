@@ -12,12 +12,6 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.PathFillType
-import androidx.compose.ui.graphics.SolidColor
-import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.graphics.StrokeJoin
-import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.graphics.vector.path
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -25,21 +19,24 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.example.librarybooklendingsystem.R
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.auth.FirebaseUser
-import com.google.firebase.firestore.FirebaseFirestore
+import com.example.librarybooklendingsystem.data.AuthState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LoginScreen(navController: NavController) {
     val context = LocalContext.current
-    val authState = AuthState
-    val isAdmin by authState.isAdmin.collectAsState()
-
+    val isAdmin by AuthState.isAdmin.collectAsStateWithLifecycle(initialValue = false)
+    
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf("") }
+    var isLoading by remember { mutableStateOf(false) }
+
+    LaunchedEffect(Unit) {
+        AuthState.init(context)
+    }
 
     Column(
         modifier = Modifier
@@ -123,13 +120,13 @@ fun LoginScreen(navController: NavController) {
                     errorMessage = "Vui lòng nhập đầy đủ thông tin đăng nhập"
                     return@Button
                 }
-
+                isLoading = true
                 AuthState.signIn(
                     email = email,
                     password = password,
                     context = context,
                     onSuccess = {
-                        // Kiểm tra role và điều hướng
+                        isLoading = false
                         if (isAdmin) {
                             navController.navigate("admin_dashboard") {
                                 popUpTo("login") { inclusive = true }
@@ -141,20 +138,22 @@ fun LoginScreen(navController: NavController) {
                         }
                     },
                     onError = { error ->
+                        isLoading = false
                         errorMessage = error
                     }
                 )
             },
             modifier = Modifier
                 .fillMaxWidth()
-                .height(80.dp)
-                .padding(horizontal = 16.dp, vertical = 16.dp),
+                .height(56.dp)
+                .padding(horizontal = 16.dp, vertical = 8.dp),
             colors = ButtonDefaults.buttonColors(
                 containerColor = Color(0xFF0093AB)
             ),
-            shape = RoundedCornerShape(12.dp)
+            shape = RoundedCornerShape(12.dp),
+            enabled = !isLoading && email.isNotEmpty() && password.isNotEmpty()
         ) {
-            if (authState.isLoading) {
+            if (isLoading) {
                 CircularProgressIndicator(
                     color = Color.White,
                     modifier = Modifier.size(24.dp)

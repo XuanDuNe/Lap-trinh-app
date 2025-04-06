@@ -1,6 +1,10 @@
 package com.example.librarybooklendingsystem.ui.navigation
 
+import android.util.Log
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -48,7 +52,22 @@ fun AppNavigation(navController: NavHostController) {
 
         // Màn hình Admin Dashboard
         composable("admin_dashboard") {
-            AdminDashboardScreen(navController = navController)
+            val isAdmin by AuthState.isAdmin.collectAsStateWithLifecycle(initialValue = false)
+            val userRole by AuthState.currentUserRole.collectAsStateWithLifecycle(initialValue = null)
+            
+            LaunchedEffect(isAdmin, userRole) {
+                Log.d("AppNavigation", "Admin status: $isAdmin, User role: $userRole")
+                if (!isAdmin || userRole != "admin") {
+                    Log.e("AppNavigation", "Non-admin user attempted to access admin dashboard")
+                    navController.navigate("home") {
+                        popUpTo("home") { inclusive = true }
+                    }
+                }
+            }
+            
+            if (isAdmin && userRole == "admin") {
+                AdminDashboardScreen(navController = navController)
+            }
         }
 
         // Các màn hình thống kê

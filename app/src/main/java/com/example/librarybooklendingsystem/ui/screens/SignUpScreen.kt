@@ -34,18 +34,13 @@ import kotlinx.coroutines.launch
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SignUpScreen(navController: NavController) {
-    val auth = FirebaseAuth.getInstance()
-    val db = FirebaseFirestore.getInstance()
-    val context = LocalContext.current
-
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var confirmPassword by remember { mutableStateOf("") }
     var name by remember { mutableStateOf("") }
-    var errorMessage by remember { mutableStateOf("") }
-    var showError by remember { mutableStateOf(false) }
     var isLoading by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
+    val context = LocalContext.current
 
     Column(
         modifier = Modifier
@@ -53,7 +48,7 @@ fun SignUpScreen(navController: NavController) {
             .background(Color.White)
     ) {
         CommonHeader(
-            title = "Đăng ký",
+            title = "Sign Up",
             onBackClick = { navController.navigateUp() },
             onShareClick = { /* Share action */ }
         )
@@ -73,11 +68,11 @@ fun SignUpScreen(navController: NavController) {
                     .padding(vertical = 16.dp)
             )
 
-            // Ô nhập họ và tên
+            // Name field
             OutlinedTextField(
                 value = name,
                 onValueChange = { name = it },
-                label = { Text("Họ và tên") },
+                label = { Text("Full Name") },
                 leadingIcon = {
                     Icon(Icons.Filled.Person, contentDescription = null)
                 },
@@ -87,7 +82,7 @@ fun SignUpScreen(navController: NavController) {
                 shape = RoundedCornerShape(12.dp)
             )
 
-            // Ô nhập email
+            // Email field
             OutlinedTextField(
                 value = email,
                 onValueChange = { email = it },
@@ -101,11 +96,11 @@ fun SignUpScreen(navController: NavController) {
                 shape = RoundedCornerShape(12.dp)
             )
 
-            // Ô nhập mật khẩu
+            // Password field
             OutlinedTextField(
                 value = password,
                 onValueChange = { password = it },
-                label = { Text("Mật khẩu") },
+                label = { Text("Password") },
                 leadingIcon = {
                     Icon(Icons.Filled.Lock, contentDescription = null)
                 },
@@ -116,11 +111,11 @@ fun SignUpScreen(navController: NavController) {
                 shape = RoundedCornerShape(12.dp)
             )
 
-            // Ô nhập lại mật khẩu
+            // Confirm Password field
             OutlinedTextField(
                 value = confirmPassword,
                 onValueChange = { confirmPassword = it },
-                label = { Text("Xác nhận mật khẩu") },
+                label = { Text("Confirm Password") },
                 leadingIcon = {
                     Icon(Icons.Filled.Lock, contentDescription = null)
                 },
@@ -133,38 +128,32 @@ fun SignUpScreen(navController: NavController) {
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // Nút đăng ký
+            // Sign Up button
             Button(
                 onClick = {
                     if (name.isEmpty() || email.isEmpty() || password.isEmpty() || confirmPassword.isEmpty()) {
-                        errorMessage = "Vui lòng điền đầy đủ thông tin"
-                        showError = true
+                        Toast.makeText(context, "Please fill in all fields", Toast.LENGTH_SHORT).show()
                         return@Button
                     }
 
                     if (password != confirmPassword) {
-                        errorMessage = "Mật khẩu không khớp"
-                        showError = true
+                        Toast.makeText(context, "Passwords do not match", Toast.LENGTH_SHORT).show()
                         return@Button
                     }
 
                     scope.launch {
                         isLoading = true
                         try {
-                            // Đăng ký với Firebase
-                            val userId = FirebaseManager.registerUserWithShortId(email, password, name)
-                            if (userId != null) {
-                                // Đăng ký thành công
+                            val shortId = FirebaseManager.registerUserWithShortId(email, password, name)
+                            if (shortId != null) {
                                 navController.navigate("login") {
                                     popUpTo("signup") { inclusive = true }
                                 }
                             } else {
-                                errorMessage = "Đăng ký thất bại"
-                                showError = true
+                                Toast.makeText(context, "Sign up failed", Toast.LENGTH_SHORT).show()
                             }
                         } catch (e: Exception) {
-                            errorMessage = e.message ?: "Đã xảy ra lỗi"
-                            showError = true
+                            Toast.makeText(context, e.message ?: "An error occurred", Toast.LENGTH_SHORT).show()
                         } finally {
                             isLoading = false
                         }
@@ -176,7 +165,7 @@ fun SignUpScreen(navController: NavController) {
                 colors = ButtonDefaults.buttonColors(
                     containerColor = Color(0xFF0093AB)
                 ),
-                enabled = !isLoading
+                enabled = !isLoading && email.isNotEmpty() && password.isNotEmpty() && name.isNotEmpty() && confirmPassword.isNotEmpty()
             ) {
                 if (isLoading) {
                     CircularProgressIndicator(
@@ -184,34 +173,25 @@ fun SignUpScreen(navController: NavController) {
                         modifier = Modifier.size(24.dp)
                     )
                 } else {
-                    Text(text = "Đăng ký", fontSize = 20.sp)
+                    Text(text = "Sign Up", fontSize = 20.sp)
                 }
             }
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Link chuyển đến trang đăng nhập
+            // Link to login
             TextButton(
-                onClick = { navController.navigate("login") }
+                onClick = { 
+                    navController.navigate("login") {
+                        popUpTo("signup") { inclusive = true }
+                    }
+                }
             ) {
                 Text(
-                    text = "Đã có tài khoản? Đăng nhập",
+                    text = "Already have an account? Sign In",
                     color = Color(0xFF0093AB)
                 )
             }
         }
-    }
-
-    if (showError) {
-        AlertDialog(
-            onDismissRequest = { showError = false },
-            title = { Text("Lỗi") },
-            text = { Text(errorMessage) },
-            confirmButton = {
-                TextButton(onClick = { showError = false }) {
-                    Text("Đóng")
-                }
-            }
-        )
     }
 }

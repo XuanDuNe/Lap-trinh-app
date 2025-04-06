@@ -3,6 +3,8 @@ package com.example.librarybooklendingsystem.data
 import android.content.Context
 import android.content.SharedPreferences
 import android.util.Log
+import android.widget.Toast
+import androidx.compose.runtime.mutableStateOf
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.firestore.FirebaseFirestore
@@ -18,33 +20,20 @@ import kotlinx.coroutines.withContext
 object AuthState {
     private val auth = FirebaseAuth.getInstance()
     private val db = FirebaseFirestore.getInstance()
-    private val _isLoading = MutableStateFlow(false)
+    private val _isLoading = mutableStateOf(false)
     private val _currentUserRole = MutableStateFlow<String?>(null)
     private val _isAdmin = MutableStateFlow(false)
     private val _currentUserShortId = MutableStateFlow<String?>(null)
     private lateinit var prefs: SharedPreferences
+
+    private val _currentUser = MutableStateFlow<FirebaseUser?>(auth.currentUser)
+    val currentUser: StateFlow<FirebaseUser?> = _currentUser.asStateFlow()
 
     val currentUserId: String?
         get() = auth.currentUser?.uid
 
     val currentUserShortId: StateFlow<String?>
         get() = _currentUserShortId.asStateFlow()
-
-    fun init(context: Context) {
-        prefs = context.getSharedPreferences("auth_prefs", Context.MODE_PRIVATE)
-        _currentUserRole.value = prefs.getString("user_role", null)
-        _isAdmin.value = prefs.getBoolean("is_admin", false)
-        _currentUserShortId.value = prefs.getString("user_short_id", null)
-    }
-
-    private fun saveAuthState(role: String?, isAdmin: Boolean, shortId: String? = null) {
-        prefs.edit().apply {
-            putString("user_role", role)
-            putBoolean("is_admin", isAdmin)
-            putString("user_short_id", shortId)
-            apply()
-        }
-    }
 
     val isLoading: Boolean
         get() = _isLoading.value
@@ -58,65 +47,100 @@ object AuthState {
     val isLoggedIn: Boolean
         get() = auth.currentUser != null
 
-    fun getCurrentUser(): FirebaseUser? = auth.currentUser
+    fun init(context: Context) {
+        prefs = context.getSharedPreferences("auth_prefs", Context.MODE_PRIVATE)
+        // Restore saved state
+        _currentUserRole.value = prefs.getString("user_role", null)
+        _isAdmin.value = prefs.getBoolean("is_admin", false)
+        _currentUserShortId.value = prefs.getString("short_id", null)
+    }
 
-    fun signOut(context: Context) {
+    private fun saveAuthState(isAdmin: Boolean, role: String?, shortId: String?) {
+        prefs.edit().apply {
+            putBoolean("is_admin", isAdmin)
+            putString("user_role", role)
+            putString("short_id", shortId)
+            apply()
+        }
+    }
+
+    fun signIn(email: String, password: String, context: Context, onSuccess: () -> Unit, onError: (String) -> Unit) {
+        _isLoading.value = true
+        auth.signInWithEmailAndPassword(email, password)
+            .addOnCompleteListener { task ->
+                if (task.isSuccessful) {
+                    val user = auth.currentUser
+                    if (user != null) {
+                        val userRef = db.collection("users").document(user.uid)
+                        userRef.get()
+                            .addOnSuccessListener { document ->
+                                if (document.exists()) {
+                                    val role = document.getString("role") ?: "user"
+                                    val shortId = document.getString("short_id")
+                                    _currentUserRole.value = role
+                                    _isAdmin.value = role == "admin"
+                                    _currentUserShortId.value = shortId
+                                    saveAuthState(role == "admin", role, shortId)
+                                    _isLoading.value = false
+                                    onSuccess()
+                                } else {
+                                    _currentUserRole.value = "user"
+                                    _isAdmin.value = false
+                                    _currentUserShortId.value = null
+                                    saveAuthState(false, "user", null)
+                                    _isLoading.value = false
+                                    onSuccess()
+                                }
+                            }
+                            .addOnFailureListener { e ->
+                                _isLoading.value = false
+                                onError(e.message ?: "Failed to get user data")
+                            }
+                    }
+                } else {
+                    _isLoading.value = false
+                    onError(task.exception?.message ?: "Authentication failed")
+                }
+            }
+    }
+
+    fun signOut() {
         auth.signOut()
         _currentUserRole.value = null
         _isAdmin.value = false
         _currentUserShortId.value = null
-        saveAuthState(null, false, null)
+        saveAuthState(false, null, null)
     }
 
-    fun updateUserRole(onComplete: (Boolean) -> Unit = {}) {
+    fun createAdminAccount(email: String, password: String, context: Context, onSuccess: () -> Unit, onError: (String) -> Unit) {
         _isLoading.value = true
-        val currentUser = auth.currentUser
-        if (currentUser != null) {
-            CoroutineScope(Dispatchers.IO).launch {
-                try {
-                    val userDoc = db.collection("users").document(currentUser.uid).get().await()
-                    if (userDoc.exists()) {
-                        val role = userDoc.getString("role") ?: "user"
-                        val shortId = userDoc.getString("id")
-                        
-                        _currentUserRole.value = role
-                        _isAdmin.value = role == "admin"
-                        _currentUserShortId.value = shortId
-                        
-                        saveAuthState(role, role == "admin", shortId)
-                        _isLoading.value = false
-                        withContext(Dispatchers.Main) {
-                            onComplete(true)
-                        }
-                    } else {
-                        _currentUserRole.value = "user"
-                        _isAdmin.value = false
-                        _currentUserShortId.value = null
-                        saveAuthState("user", false)
-                        _isLoading.value = false
-                        withContext(Dispatchers.Main) {
-                            onComplete(false)
-                        }
+        auth.createUserWithEmailAndPassword(email, password)
+            .addOnCompleteListener { task ->
+                if (task.isSuccessful) {
+                    val user = auth.currentUser
+                    if (user != null) {
+                        val userData = hashMapOf(
+                            "role" to "admin",
+                            "email" to email
+                        )
+                        db.collection("users").document(user.uid)
+                            .set(userData)
+                            .addOnSuccessListener {
+                                _isAdmin.value = true
+                                _currentUserRole.value = "admin"
+                                saveAuthState(true, "admin", null)
+                                _isLoading.value = false
+                                onSuccess()
+                            }
+                            .addOnFailureListener { e ->
+                                _isLoading.value = false
+                                onError(e.message ?: "Failed to create admin account")
+                            }
                     }
-                } catch (e: Exception) {
-                    Log.e("AuthState", "Error updating user role: ${e.message}")
-                    _currentUserRole.value = "user"
-                    _isAdmin.value = false
-                    _currentUserShortId.value = null
-                    saveAuthState("user", false)
+                } else {
                     _isLoading.value = false
-                    withContext(Dispatchers.Main) {
-                        onComplete(false)
-                    }
+                    onError(task.exception?.message ?: "Failed to create user")
                 }
             }
-        } else {
-            _currentUserRole.value = null
-            _isAdmin.value = false
-            _currentUserShortId.value = null
-            saveAuthState(null, false)
-            _isLoading.value = false
-            onComplete(false)
-        }
     }
 } 

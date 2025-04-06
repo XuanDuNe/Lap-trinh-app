@@ -58,7 +58,7 @@ fun AccountScreen(navController: NavController) {
     // Dialog xác nhận trả sách
     if (showReturnDialog) {
         AlertDialog(
-            onDismissRequest = { 
+            onDismissRequest = {
                 showReturnDialog = false
                 selectedBook = null
             },
@@ -74,10 +74,10 @@ fun AccountScreen(navController: NavController) {
                                     if (bookId != null) {
                                         // Cập nhật trạng thái sách trong Firestore
                                         FirebaseManager.returnBook(currentUser?.uid ?: "", book)
-                                        
+
                                         // Xóa sách khỏi danh sách hiển thị ngay lập tức
-                                        borrowedBooks = borrowedBooks.filter { 
-                                            (it["bookId"] as? String) != bookId 
+                                        borrowedBooks = borrowedBooks.filter {
+                                            (it["bookId"] as? String) != bookId
                                         }
                                     }
                                 } catch (e: Exception) {
@@ -94,7 +94,7 @@ fun AccountScreen(navController: NavController) {
             },
             dismissButton = {
                 TextButton(
-                    onClick = { 
+                    onClick = {
                         showReturnDialog = false
                         selectedBook = null
                     }
@@ -120,11 +120,11 @@ fun AccountScreen(navController: NavController) {
                 try {
                     val userInfo = FirebaseManager.getUserInfo(currentUser.uid)
                     userName = userInfo?.get("name") as? String ?: "Người dùng"
-                    
+
                     // Tạo ID số ngẫu nhiên 6 chữ số
                     val random = Random()
                     numericId = String.format("%06d", random.nextInt(1000000))
-                    
+
                     Log.d("AccountScreen", "Thông tin người dùng: $userInfo")
                     Log.d("AccountScreen", "Tên người dùng: $userName")
                     Log.d("AccountScreen", "Numeric ID: $numericId")
@@ -262,12 +262,12 @@ fun BorrowedBookGridItem(
     onBookClick: () -> Unit
 ) {
     Log.d("BorrowedBookGridItem", "Book data: $book")
-    
+
     val bookTitle = book["bookTitle"] as? String ?: "Không có tiêu đề"
     val authorName = book["author_name"] as? String ?: "Không có tác giả"
-    
+
     val currentDate = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(Date())
-    
+
     val dateFormat = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
     val expectedReturnDate = try {
         when (val date = book["expectedReturnDate"]) {
@@ -284,7 +284,7 @@ fun BorrowedBookGridItem(
         modifier = Modifier
             .padding(4.dp)
             .width(110.dp)
-            .height(250.dp)
+            .height(200.dp)
             .clickable { onBookClick() },
         shape = RoundedCornerShape(12.dp),
         elevation = CardDefaults.cardElevation(
@@ -301,45 +301,49 @@ fun BorrowedBookGridItem(
                 contentDescription = "Book Image",
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(150.dp),
+                    .height(140.dp),
                 contentScale = ContentScale.Crop
             )
-            
+
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 4.dp, vertical = 4.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(2.dp)
+                    .padding(horizontal = 8.dp, vertical = 4.dp)
             ) {
                 Text(
                     text = bookTitle,
-                    fontSize = 13.sp,
-                    fontWeight = FontWeight.Bold,
                     maxLines = 1,
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Bold,
                     overflow = TextOverflow.Ellipsis,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.padding(horizontal = 4.dp)
+                    lineHeight = 12.sp
                 )
-                
                 Text(
                     text = authorName,
-                    fontSize = 11.sp,
+                    maxLines = 1,
+                    fontSize = 10.sp,
+                    color = Color.Gray,
+                    overflow = TextOverflow.Ellipsis,
+                    lineHeight = 10.sp,
+                    modifier = Modifier.offset(y = (-2).dp)
+                )
+                Text(
+                    text = "Mượn: $currentDate",
+                    fontSize = 9.sp,
                     color = Color.Gray,
                     maxLines = 1,
-                    textAlign = TextAlign.Center
+                    overflow = TextOverflow.Ellipsis,
+                    lineHeight = 9.sp,
+                    modifier = Modifier.offset(y = (-2).dp)
                 )
-                
                 Text(
-                    text = "Ngày mượn: $currentDate",
-                    fontSize = 11.sp,
-                    color = Color.Gray
-                )
-                
-                Text(
-                    text = "Ngày trả dự kiến: $expectedReturnDate",
-                    fontSize = 11.sp,
-                    color = Color.Gray
+                    text = "Trả: $expectedReturnDate",
+                    fontSize = 9.sp,
+                    color = Color.Gray,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    lineHeight = 9.sp,
+                    modifier = Modifier.offset(y = (-2).dp)
                 )
             }
         }

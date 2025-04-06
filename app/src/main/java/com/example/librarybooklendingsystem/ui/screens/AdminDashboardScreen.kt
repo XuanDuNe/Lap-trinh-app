@@ -101,7 +101,7 @@ fun AdminDashboardScreen(navController: NavController) {
                     .fillMaxWidth()
                     .height(130.dp)
                     .padding(vertical = 8.dp)
-                    .clickable { 
+                    .clickable {
                         navController.navigate(route) {
                             launchSingleTop = true
                             popUpTo("admin_dashboard") { saveState = true }

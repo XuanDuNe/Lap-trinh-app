@@ -1,12 +1,24 @@
 package com.example.librarybooklendingsystem.data
 
+import android.content.Context
+import android.content.SharedPreferences
 import android.util.Log
 import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.auth.ktx.auth
+import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.SetOptions
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
+import com.google.firebase.analytics.FirebaseAnalytics
+import com.google.firebase.analytics.ktx.analytics
+import com.google.firebase.analytics.ktx.logEvent
+import com.google.firebase.auth.ktx.auth
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import java.text.SimpleDateFormat
 import java.util.*
@@ -14,6 +26,79 @@ import java.util.*
 object FirebaseManager {
     private val db: FirebaseFirestore = Firebase.firestore
     private val auth: FirebaseAuth = Firebase.auth
+    private val analytics: FirebaseAnalytics by lazy { Firebase.analytics }
+    private val _isAdmin = MutableStateFlow(false)
+    private val _currentUserShortId = MutableStateFlow<String?>(null)
+    private val _currentUserRole = MutableStateFlow<String?>(null)
+    private lateinit var prefs: SharedPreferences
+
+    val currentUserId: String?
+        get() = auth.currentUser?.uid
+
+    val isAdmin: StateFlow<Boolean>
+        get() = _isAdmin.asStateFlow()
+
+    val currentUserShortId: StateFlow<String?>
+        get() = _currentUserShortId.asStateFlow()
+
+    val currentUserRole: StateFlow<String?>
+        get() = _currentUserRole.asStateFlow()
+
+    fun getCurrentUser(): FirebaseUser? = auth.currentUser
+
+    fun initialize(context: Context) {
+        prefs = context.getSharedPreferences("FirebasePrefs", Context.MODE_PRIVATE)
+        checkAdminStatus()
+    }
+
+    private fun checkAdminStatus() {
+        val currentUser = auth.currentUser
+        if (currentUser != null) {
+            CoroutineScope(Dispatchers.IO).launch {
+                try {
+                    val userDoc = db.collection(USERS_COLLECTION)
+                        .document(currentUser.uid)
+                        .get()
+                        .await()
+
+                    if (userDoc.exists()) {
+                        val role = userDoc.getString("role")
+                        Log.d("FirebaseManager", "User role from Firestore: $role")
+                        val isAdmin = role == "admin"
+                        _isAdmin.value = isAdmin
+                        
+                        // Update user role and admin status in AuthState
+                        _currentUserRole.value = role
+                        _isAdmin.value = isAdmin
+                        
+                        // Save admin status in SharedPreferences
+                        prefs.edit().putBoolean("is_admin", isAdmin).apply()
+                    } else {
+                        Log.e("FirebaseManager", "User document not found")
+                        _isAdmin.value = false
+                        _currentUserRole.value = null
+                        prefs.edit().putBoolean("is_admin", false).apply()
+                    }
+                } catch (e: Exception) {
+                    Log.e("FirebaseManager", "Error checking admin status: ${e.message}")
+                    _isAdmin.value = false
+                    _currentUserRole.value = null
+                    prefs.edit().putBoolean("is_admin", false).apply()
+                }
+            }
+        } else {
+            _isAdmin.value = false
+            _currentUserRole.value = null
+            prefs.edit().putBoolean("is_admin", false).apply()
+        }
+    }
+
+    fun signOut() {
+        auth.signOut()
+        _isAdmin.value = false
+        _currentUserShortId.value = null
+        _currentUserRole.value = null
+    }
 
     // Collection names
     private const val USERS_COLLECTION = "users"
@@ -33,6 +118,22 @@ object FirebaseManager {
         const val PENDING = "pending"
         const val APPROVED = "approved"
         const val RETURNED = "returned"
+    }
+
+    // Analytics event names
+    private object AnalyticsEvents {
+        const val BOOK_BORROW = "book_borrow"
+        const val BOOK_RETURN = "book_return"
+    }
+
+    // Analytics parameter names
+    private object AnalyticsParams {
+        const val USER_ID = "user_id"
+        const val BOOK_ID = "book_id"
+        const val BOOK_TITLE = "book_title"
+        const val BORROW_TIME = "borrow_time"
+        const val RETURN_TIME = "return_time"
+        const val EMAIL = "email"
     }
 
     // Tính ngày trả dự kiến (100 ngày từ ngày mượn)
@@ -363,23 +464,53 @@ object FirebaseManager {
         }
     }
 
+    // Analytics tracking functions
+    private fun logBookBorrow(userId: String, bookId: String, bookTitle: String) {
+        try {
+            Log.d("FirebaseAnalytics", "Logging book borrow event - User: $userId, Book: $bookTitle")
+            analytics.logEvent(AnalyticsEvents.BOOK_BORROW) {
+                param(AnalyticsParams.USER_ID, userId)
+                param(AnalyticsParams.BOOK_ID, bookId)
+                param(AnalyticsParams.BOOK_TITLE, bookTitle)
+                param(FirebaseAnalytics.Param.SUCCESS, "1")
+                param(AnalyticsParams.BORROW_TIME, System.currentTimeMillis())
+            }
+            Log.d("FirebaseAnalytics", "Successfully logged book borrow event")
+        } catch (e: Exception) {
+            Log.e("FirebaseAnalytics", "Error logging book borrow event: ${e.message}")
+        }
+    }
+
+    private fun logBookReturn(userId: String, bookId: String, bookTitle: String) {
+        try {
+            Log.d("FirebaseAnalytics", "Logging book return event - User: $userId, Book: $bookTitle")
+            analytics.logEvent(AnalyticsEvents.BOOK_RETURN) {
+                param(AnalyticsParams.USER_ID, userId)
+                param(AnalyticsParams.BOOK_ID, bookId)
+                param(AnalyticsParams.BOOK_TITLE, bookTitle)
+                param(FirebaseAnalytics.Param.SUCCESS, "1")
+                param(AnalyticsParams.RETURN_TIME, System.currentTimeMillis())
+            }
+            Log.d("FirebaseAnalytics", "Successfully logged book return event")
+        } catch (e: Exception) {
+            Log.e("FirebaseAnalytics", "Error logging book return event: ${e.message}")
+        }
+    }
+
     // Đăng ký user với short ID
     suspend fun registerUserWithShortId(email: String, password: String, name: String): String? {
         return try {
-            // Tạo user với email và password
             val result = auth.createUserWithEmailAndPassword(email, password).await()
             val user = result.user
 
             if (user != null) {
-                // Tạo short ID
                 val shortId = generateShortId()
                 
-                // Lưu thông tin user vào Firestore
                 val userData = mapOf(
                     "email" to email,
                     "role" to "user",
                     "shortId" to shortId,
-                    "name" to name,  // Thêm tên người dùng
+                    "name" to name,
                     "createdAt" to Date()
                 )
 
@@ -387,6 +518,14 @@ object FirebaseManager {
                     .document(user.uid)
                     .set(userData)
                     .await()
+
+                // Track user registration
+                analytics.logEvent(FirebaseAnalytics.Event.SIGN_UP) {
+                    param(FirebaseAnalytics.Param.METHOD, "email")
+                    param(AnalyticsParams.USER_ID, user.uid)
+                    param(AnalyticsParams.EMAIL, email)
+                    param(FirebaseAnalytics.Param.SUCCESS, "1")
+                }
 
                 shortId
             } else {
@@ -398,17 +537,41 @@ object FirebaseManager {
         }
     }
 
+    suspend fun loginUser(email: String, password: String): Boolean {
+        return try {
+            val result = auth.signInWithEmailAndPassword(email, password).await()
+            val user = result.user
+            
+            if (user != null) {
+                // Track login event
+                analytics.logEvent(FirebaseAnalytics.Event.LOGIN) {
+                    param(FirebaseAnalytics.Param.METHOD, "email")
+                    param(AnalyticsParams.USER_ID, user.uid)
+                    param(AnalyticsParams.EMAIL, email)
+                    param(FirebaseAnalytics.Param.SUCCESS, "1")
+                }
+                true
+            } else {
+                false
+            }
+        } catch (e: Exception) {
+            Log.e("FirebaseManager", "Lỗi khi đăng nhập: ${e.message}")
+            false
+        }
+    }
+
     suspend fun returnBook(userId: String, book: Map<String, Any>) {
         try {
             Log.d("FirebaseManager", "Bắt đầu trả sách cho user: $userId")
             val bookId = book["bookId"] as? String ?: return
+            val bookTitle = book["bookTitle"] as? String ?: ""
             val currentDate = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(Date())
             
             // Tìm document chứa thông tin mượn sách
             val querySnapshot = db.collection(BORROWS_COLLECTION)
                 .whereEqualTo("userId", userId)
                 .whereEqualTo("bookId", bookId)
-                .whereEqualTo("status", "Đang mượn")  // Chỉ cập nhật sách đang mượn
+                .whereEqualTo("status", "Đang mượn")
                 .get()
                 .await()
 
@@ -430,6 +593,9 @@ object FirebaseManager {
                     Log.d("FirebaseManager", "Cập nhật document ${document.id} với dữ liệu: $updateData")
                     
                     document.reference.update(updateData).await()
+                    
+                    // Track book return event
+                    logBookReturn(userId, bookId, bookTitle)
                     
                     Log.d("FirebaseManager", "Đã cập nhật trạng thái sách thành công")
                 } catch (e: Exception) {
@@ -468,6 +634,8 @@ object FirebaseManager {
             
             // Kiểm tra xem người dùng đã mượn sách này chưa
             val bookId = book["id"] as? String ?: ""
+            val bookTitle = book["title"] as? String ?: ""
+            
             if (hasUserBorrowedBook(userId, bookId)) {
                 throw Exception("Bạn đã mượn sách này và chưa trả!")
             }
@@ -475,7 +643,7 @@ object FirebaseManager {
             val borrowData = mapOf(
                 "userId" to userId,
                 "bookId" to bookId,
-                "bookTitle" to (book["title"] as? String ?: ""),
+                "bookTitle" to bookTitle,
                 "author_name" to (book["author"] as? String ?: ""),
                 "bookCover" to (book["coverUrl"] as? String ?: ""),
                 "studentName" to (book["studentName"] as? String ?: ""),
@@ -486,9 +654,13 @@ object FirebaseManager {
 
             Log.d("FirebaseManager", "Dữ liệu mượn sách: $borrowData")
             
+            // Lưu thông tin mượn sách
             db.collection(BORROWS_COLLECTION)
                 .add(borrowData)
                 .await()
+
+            // Track book borrow event
+            logBookBorrow(userId, bookId, bookTitle)
 
             Log.d("FirebaseManager", "Đã thêm thông tin mượn sách thành công")
         } catch (e: Exception) {
@@ -522,5 +694,99 @@ object FirebaseManager {
             Log.e("FirebaseManager", "Lỗi khi lấy lịch sử mượn sách: ${e.message}")
             null
         }
+    }
+
+    fun signIn(
+        email: String,
+        password: String,
+        context: Context,
+        onSuccess: () -> Unit,
+        onError: (String) -> Unit
+    ) {
+        auth.signInWithEmailAndPassword(email, password)
+            .addOnSuccessListener { authResult ->
+                val user = authResult.user
+                if (user != null) {
+                    // Get user role from Firestore
+                    db.collection("users").document(user.uid).get()
+                        .addOnSuccessListener { document ->
+                            if (document != null && document.exists()) {
+                                val role = document.getString("role")
+                                _isAdmin.value = role == "admin"
+                                _currentUserShortId.value = document.getString("shortId")
+                                _currentUserRole.value = role
+                                onSuccess()
+                            } else {
+                                onError("User data not found")
+                            }
+                        }
+                        .addOnFailureListener { e ->
+                            Log.e("FirebaseManager", "Error getting user data", e)
+                            onError("Error getting user data: ${e.message}")
+                        }
+                } else {
+                    onError("Authentication failed")
+                }
+            }
+            .addOnFailureListener { e ->
+                Log.e("FirebaseManager", "Sign in failed", e)
+                onError("Sign in failed: ${e.message}")
+            }
+    }
+
+    fun createAdminAccount(
+        email: String,
+        password: String,
+        shortId: String,
+        onSuccess: () -> Unit,
+        onError: (String) -> Unit
+    ) {
+        // First check if shortId is unique
+        db.collection("users")
+            .whereEqualTo("shortId", shortId)
+            .get()
+            .addOnSuccessListener { documents ->
+                if (!documents.isEmpty) {
+                    onError("Short ID already exists")
+                    return@addOnSuccessListener
+                }
+
+                // Create the user account
+                auth.createUserWithEmailAndPassword(email, password)
+                    .addOnSuccessListener { authResult ->
+                        val user = authResult.user
+                        if (user != null) {
+                            // Create user document in Firestore
+                            val userData = hashMapOf(
+                                "email" to email,
+                                "role" to "admin",
+                                "shortId" to shortId
+                            )
+
+                            db.collection("users").document(user.uid)
+                                .set(userData)
+                                .addOnSuccessListener {
+                                    _isAdmin.value = true
+                                    _currentUserShortId.value = shortId
+                                    _currentUserRole.value = "admin"
+                                    onSuccess()
+                                }
+                                .addOnFailureListener { e ->
+                                    Log.e("FirebaseManager", "Error creating user document", e)
+                                    onError("Error creating user document: ${e.message}")
+                                }
+                        } else {
+                            onError("User creation failed")
+                        }
+                    }
+                    .addOnFailureListener { e ->
+                        Log.e("FirebaseManager", "Create user failed", e)
+                        onError("Create user failed: ${e.message}")
+                    }
+            }
+            .addOnFailureListener { e ->
+                Log.e("FirebaseManager", "Error checking shortId uniqueness", e)
+                onError("Error checking shortId uniqueness: ${e.message}")
+            }
     }
 } 
