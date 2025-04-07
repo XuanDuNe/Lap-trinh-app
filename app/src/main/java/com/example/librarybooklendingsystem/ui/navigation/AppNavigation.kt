@@ -90,9 +90,5 @@ fun AppNavigation(navController: NavHostController) {
         composable("pending_books_approval") {
             PendingBooksApprovalScreen(navController = navController)
         }
-
-        composable("account_management") {
-            AccountManagementScreen(navController = navController)
-        }
     }
 }

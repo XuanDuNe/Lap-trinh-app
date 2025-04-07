@@ -37,8 +37,7 @@ fun AdminDashboardScreen(navController: NavController) {
         Triple("Thống kê người dùng", "user_stats", R.drawable.ic),
         Triple("Thống kê trả sách", "returned_books_stats", R.drawable.ic),
         Triple("Thống kê sách trong thư viện", "library_stats", R.drawable.ic),
-        Triple("Thống kê danh sách cần duyệt", "pending_books_approval", R.drawable.ic),
-        Triple("Quản lý tài khoản", "account_management", R.drawable.ic)
+        Triple("Thống kê danh sách cần duyệt", "pending_books_approval", R.drawable.ic)
     )
 
     LazyColumn(

@@ -224,7 +224,6 @@ fun MainScreen() {
                 composable("user_stats") { UserStatsScreen(navController) }
                 composable("borrowed_books_stats") { BorrowedBooksStatsScreen(navController) }
                 composable("returned_books_stats") { ReturnedBooksStatsScreen(navController) }
-                composable("account_management") { AccountManagementScreen(navController) }
             }
         }
     }
