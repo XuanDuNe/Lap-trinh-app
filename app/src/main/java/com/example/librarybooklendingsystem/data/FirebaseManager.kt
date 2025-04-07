@@ -13,6 +13,7 @@ import com.google.firebase.analytics.FirebaseAnalytics
 import com.google.firebase.analytics.ktx.analytics
 import com.google.firebase.analytics.ktx.logEvent
 import com.google.firebase.auth.ktx.auth
+import com.google.firebase.Timestamp
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -255,21 +256,18 @@ object FirebaseManager {
 
     suspend fun getBookById(bookId: String): Book? {
         return try {
-            Log.d("FirebaseManager", "Tìm sách với ID: $bookId")
             val doc = db.collection(BOOKS_COLLECTION)
                 .document(bookId)
                 .get()
                 .await()
+
             if (doc.exists()) {
-                val book = Book.fromMap(doc.id, doc.data ?: emptyMap())
-                Log.d("FirebaseManager", "Đã tìm thấy sách: ${book.title}")
-                book
+                Book.fromMap(doc.id, doc.data ?: emptyMap())
             } else {
-                Log.d("FirebaseManager", "Không tìm thấy sách với ID: $bookId")
                 null
             }
         } catch (e: Exception) {
-            Log.e("FirebaseManager", "Lỗi khi tìm sách theo ID: ${e.message}")
+            Log.e("FirebaseManager", "Lỗi khi lấy thông tin sách: ${e.message}")
             null
         }
     }
@@ -565,7 +563,7 @@ object FirebaseManager {
             Log.d("FirebaseManager", "Bắt đầu trả sách cho user: $userId")
             val bookId = book["bookId"] as? String ?: return
             val bookTitle = book["bookTitle"] as? String ?: ""
-            val currentDate = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(Date())
+            val currentDate = Date() // Lấy thời gian hiện tại của thiết bị
             
             // Tìm document chứa thông tin mượn sách
             val querySnapshot = db.collection(BORROWS_COLLECTION)
@@ -587,7 +585,7 @@ object FirebaseManager {
                 try {
                     val updateData = mapOf(
                         "status" to "Đã trả",
-                        "returnDate" to currentDate
+                        "actualReturnDate" to Timestamp(currentDate) // Sử dụng Timestamp
                     )
                     
                     Log.d("FirebaseManager", "Cập nhật document ${document.id} với dữ liệu: $updateData")
@@ -640,6 +638,14 @@ object FirebaseManager {
                 throw Exception("Bạn đã mượn sách này và chưa trả!")
             }
             
+            val currentDate = Date() // Ngày mượn hiện tại
+            
+            // Tính ngày trả dự kiến (100 ngày sau)
+            val calendar = Calendar.getInstance()
+            calendar.time = currentDate
+            calendar.add(Calendar.DAY_OF_MONTH, 100)
+            val expectedReturnDate = calendar.time
+            
             val borrowData = mapOf(
                 "userId" to userId,
                 "bookId" to bookId,
@@ -647,8 +653,8 @@ object FirebaseManager {
                 "author_name" to (book["author"] as? String ?: ""),
                 "bookCover" to (book["coverUrl"] as? String ?: ""),
                 "studentName" to (book["studentName"] as? String ?: ""),
-                "borrowDate" to SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(Date()),
-                "expectedReturnDate" to (book["expectedReturnDate"] as? String ?: ""),
+                "borrowDate" to Timestamp(currentDate),
+                "expectedReturnDate" to Timestamp(expectedReturnDate),
                 "status" to "Đang mượn"
             )
 
@@ -864,6 +870,55 @@ object FirebaseManager {
         } catch (e: Exception) {
             Log.e("FirebaseManager", "Lỗi khi xóa tài khoản người dùng: ${e.message}")
             false
+        }
+    }
+
+    // Borrow operations
+    suspend fun getAllBorrows(): List<Borrow> {
+        return try {
+            Log.d("FirebaseManager", "Bắt đầu lấy dữ liệu mượn sách từ collection: $BORROWS_COLLECTION")
+            val snapshot = db.collection(BORROWS_COLLECTION).get().await()
+            Log.d("FirebaseManager", "Số lượng documents mượn sách nhận được: ${snapshot.size()}")
+
+            if (snapshot.isEmpty) {
+                Log.d("FirebaseManager", "Collection borrows trống")
+                return emptyList()
+            }
+
+            val borrows = snapshot.documents.mapNotNull { doc ->
+                try {
+                    Log.d("FirebaseManager", "Đang parse borrow document ID: ${doc.id}")
+                    Log.d("FirebaseManager", "Borrow document data: ${doc.data}")
+                    Borrow.fromMap(doc.id, doc.data ?: emptyMap())
+                } catch (e: Exception) {
+                    Log.e("FirebaseManager", "Lỗi khi parse borrow document ${doc.id}: ${e.message}", e)
+                    null
+                }
+            }
+            Log.d("FirebaseManager", "Tổng số lượt mượn đã parse thành công: ${borrows.size}")
+            borrows
+        } catch (e: Exception) {
+            Log.e("FirebaseManager", "Lỗi khi lấy dữ liệu mượn sách từ Firebase: ${e.message}", e)
+            emptyList()
+        }
+    }
+
+    // Thêm hàm lấy tên người dùng
+    suspend fun getUserName(userId: String): String {
+        return try {
+            val userDoc = db.collection(USERS_COLLECTION)
+                .document(userId)
+                .get()
+                .await()
+
+            if (userDoc.exists()) {
+                userDoc.getString("name") ?: userDoc.getString("email") ?: "Không xác định"
+            } else {
+                "Không xác định"
+            }
+        } catch (e: Exception) {
+            Log.e("FirebaseManager", "Lỗi khi lấy tên người dùng: ${e.message}")
+            "Không xác định"
         }
     }
 } 
