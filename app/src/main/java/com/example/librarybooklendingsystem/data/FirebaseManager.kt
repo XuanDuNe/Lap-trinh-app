@@ -789,4 +789,81 @@ object FirebaseManager {
                 onError("Error checking shortId uniqueness: ${e.message}")
             }
     }
+
+    // Thêm phương thức để lấy tất cả người dùng
+    suspend fun getAllUsers(): List<User> {
+        return try {
+            val snapshot = db.collection(USERS_COLLECTION)
+                .get()
+                .await()
+
+            snapshot.documents.mapNotNull { doc ->
+                try {
+                    User.fromMap(doc.id, doc.data ?: emptyMap())
+                } catch (e: Exception) {
+                    Log.e("FirebaseManager", "Lỗi khi parse user document ${doc.id}: ${e.message}")
+                    null
+                }
+            }
+        } catch (e: Exception) {
+            Log.e("FirebaseManager", "Lỗi khi lấy danh sách người dùng: ${e.message}")
+            emptyList()
+        }
+    }
+
+    // Thêm phương thức để cập nhật trạng thái người dùng
+    suspend fun updateUserStatus(userId: String, isActive: Boolean): Boolean {
+        return try {
+            db.collection(USERS_COLLECTION)
+                .document(userId)
+                .update("isActive", isActive)
+                .await()
+            true
+        } catch (e: Exception) {
+            Log.e("FirebaseManager", "Lỗi khi cập nhật trạng thái người dùng: ${e.message}")
+            false
+        }
+    }
+
+    // Thêm phương thức để cập nhật thông tin người dùng
+    suspend fun updateUserInfo(userId: String, email: String, role: String): Boolean {
+        return try {
+            val updateData = mapOf(
+                "email" to email,
+                "role" to role
+            ) as Map<String, Any>
+            
+            db.collection(USERS_COLLECTION)
+                .document(userId)
+                .update(updateData)
+                .await()
+            true
+        } catch (e: Exception) {
+            Log.e("FirebaseManager", "Lỗi khi cập nhật thông tin người dùng: ${e.message}")
+            false
+        }
+    }
+
+    // Thêm phương thức để xóa tài khoản người dùng
+    suspend fun deleteUser(userId: String): Boolean {
+        return try {
+            // Xóa document trong collection users
+            db.collection(USERS_COLLECTION)
+                .document(userId)
+                .delete()
+                .await()
+            
+            // Xóa tài khoản authentication
+            auth.currentUser?.let { currentUser ->
+                if (currentUser.uid == userId) {
+                    currentUser.delete().await()
+                }
+            }
+            
+            true
+        } catch (e: Exception) {
+            Log.e("FirebaseManager", "Lỗi khi xóa tài khoản người dùng: ${e.message}")
+            false
+        }
+    }
 } 

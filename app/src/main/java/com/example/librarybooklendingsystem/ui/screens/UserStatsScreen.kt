@@ -7,9 +7,9 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.KeyboardArrowLeft
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -17,22 +17,161 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
 import androidx.navigation.NavController
 import com.example.librarybooklendingsystem.R
+import com.example.librarybooklendingsystem.data.FirebaseManager
+import com.example.librarybooklendingsystem.data.User
+import kotlinx.coroutines.launch
+import java.text.SimpleDateFormat
+import java.util.*
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun UserStatsScreen(navController: NavController) {
-    val users = listOf(
-        "User 1" to "Lorem ipsum dolor, consectetur.",
-        "User 2" to "Lorem ipsum dolor, consectetur.",
-        "User 3" to "Lorem ipsum dolor, consectetur.",
-        "User 4" to "Lorem ipsum dolor, consectetur.",
-        "User 5" to "Lorem ipsum dolor, consectetur.",
-        "User 6" to "Lorem ipsum dolor, consectetur.",
-        "User 7" to "Lorem ipsum dolor, consectetur.",
-        "User 8" to "Lorem ipsum dolor, consectetur."
-    )
+    var users by remember { mutableStateOf<List<User>>(emptyList()) }
+    var isLoading by remember { mutableStateOf(true) }
+    var showEditDialog by remember { mutableStateOf<User?>(null) }
+    var showDeleteDialog by remember { mutableStateOf<User?>(null) }
+    var editedEmail by remember { mutableStateOf("") }
+    var editedRole by remember { mutableStateOf("") }
+    val scope = rememberCoroutineScope()
+    val dateFormat = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
+
+    LaunchedEffect(Unit) {
+        scope.launch {
+            users = FirebaseManager.getAllUsers()
+            isLoading = false
+        }
+    }
+
+    // Dialog chỉnh sửa thông tin người dùng
+    if (showEditDialog != null) {
+        val user = showEditDialog!!
+        Dialog(onDismissRequest = { showEditDialog = null }) {
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                shape = RoundedCornerShape(16.dp),
+                elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(
+                        text = "Chỉnh sửa thông tin người dùng",
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF0288D1)
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                    
+                    OutlinedTextField(
+                        value = editedEmail,
+                        onValueChange = { editedEmail = it },
+                        label = { Text("Email") },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    
+                    OutlinedTextField(
+                        value = editedRole,
+                        onValueChange = { editedRole = it },
+                        label = { Text("Vai trò (user/admin)") },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                    
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceEvenly
+                    ) {
+                        Button(
+                            onClick = {
+                                scope.launch {
+                                    FirebaseManager.updateUserInfo(user.id, editedEmail, editedRole)
+                                    users = FirebaseManager.getAllUsers()
+                                    showEditDialog = null
+                                }
+                            },
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF0288D1))
+                        ) {
+                            Text("Lưu")
+                        }
+                        Button(
+                            onClick = { showEditDialog = null },
+                            colors = ButtonDefaults.buttonColors(containerColor = Color.Gray)
+                        ) {
+                            Text("Hủy")
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // Dialog xác nhận xóa tài khoản
+    if (showDeleteDialog != null) {
+        val user = showDeleteDialog!!
+        Dialog(onDismissRequest = { showDeleteDialog = null }) {
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                shape = RoundedCornerShape(16.dp),
+                elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(
+                        text = "Xác nhận xóa tài khoản",
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.Red
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text(
+                        text = "Bạn có chắc chắn muốn xóa tài khoản của ${user.email}?",
+                        fontSize = 16.sp,
+                        textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                    
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceEvenly
+                    ) {
+                        Button(
+                            onClick = {
+                                scope.launch {
+                                    FirebaseManager.deleteUser(user.id)
+                                    users = FirebaseManager.getAllUsers()
+                                    showDeleteDialog = null
+                                }
+                            },
+                            colors = ButtonDefaults.buttonColors(containerColor = Color.Red)
+                        ) {
+                            Text("Xóa")
+                        }
+                        Button(
+                            onClick = { showDeleteDialog = null },
+                            colors = ButtonDefaults.buttonColors(containerColor = Color.Gray)
+                        ) {
+                            Text("Hủy")
+                        }
+                    }
+                }
+            }
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -82,62 +221,140 @@ fun UserStatsScreen(navController: NavController) {
                 .padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            LazyColumn(
-                modifier = Modifier.fillMaxSize()
+            // Thống kê tổng quan
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 16.dp),
+                shape = RoundedCornerShape(12.dp),
+                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
             ) {
-                items(users) { user ->
-                    Card(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 4.dp),
-                        shape = RoundedCornerShape(8.dp),
-                        colors = CardDefaults.cardColors(
-                            containerColor = Color.White
-                        ),
-                        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-                    ) {
-                        Row(
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(
+                        text = "Tổng số người dùng: ${users.size}",
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF0288D1)
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = "Người dùng đang hoạt động: ${users.count { it.isActive }}",
+                        fontSize = 16.sp,
+                        color = Color.Gray
+                    )
+                    Text(
+                        text = "Người dùng bị khóa: ${users.count { !it.isActive }}",
+                        fontSize = 16.sp,
+                        color = Color.Gray
+                    )
+                }
+            }
+
+            if (isLoading) {
+                CircularProgressIndicator(
+                    modifier = Modifier.padding(16.dp),
+                    color = Color(0xFF0288D1)
+                )
+            } else {
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize()
+                ) {
+                    items(users) { user ->
+                        Card(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(16.dp),
-                            verticalAlignment = Alignment.CenterVertically
+                                .padding(vertical = 4.dp),
+                            shape = RoundedCornerShape(8.dp),
+                            colors = CardDefaults.cardColors(
+                                containerColor = Color.White
+                            ),
+                            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
                         ) {
-                            Icon(
-                                painter = painterResource(id = R.drawable.user),
-                                contentDescription = "User Icon",
+                            Row(
                                 modifier = Modifier
-                                    .size(40.dp)
-                                    .background(Color.LightGray, shape = CircleShape),
-                                tint = Color(0xFF0288D1)
-                            )
-                            Spacer(modifier = Modifier.width(12.dp))
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(
-                                    text = user.first,
-                                    fontSize = 16.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.onSurface
-                                )
-                                Text(
-                                    text = user.second,
-                                    fontSize = 14.sp,
-                                    color = Color.Gray
-                                )
-                            }
-                            Spacer(modifier = Modifier.width(12.dp))
-                            IconButton(onClick = { /* Chỉnh sửa */ }) {
+                                    .fillMaxWidth()
+                                    .padding(16.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
                                 Icon(
-                                    painter = painterResource(id = R.drawable.edit),
-                                    contentDescription = "Edit Icon",
+                                    painter = painterResource(id = R.drawable.user),
+                                    contentDescription = "User Icon",
+                                    modifier = Modifier
+                                        .size(40.dp)
+                                        .background(Color.LightGray, shape = CircleShape),
                                     tint = Color(0xFF0288D1)
                                 )
-                            }
-                            IconButton(onClick = { /* Xóa */ }) {
-                                Icon(
-                                    painter = painterResource(id = R.drawable.delete),
-                                    contentDescription = "Delete Icon",
-                                    tint = Color.Red
-                                )
+                                Spacer(modifier = Modifier.width(12.dp))
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        text = user.email,
+                                        fontSize = 16.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.onSurface
+                                    )
+                                    Text(
+                                        text = "Vai trò: ${user.role}",
+                                        fontSize = 14.sp,
+                                        color = Color.Gray
+                                    )
+                                    user.createdAt?.let {
+                                        Text(
+                                            text = "Ngày tạo: ${dateFormat.format(it)}",
+                                            fontSize = 14.sp,
+                                            color = Color.Gray
+                                        )
+                                    }
+                                }
+                                Spacer(modifier = Modifier.width(12.dp))
+                                
+                                // Nút chỉnh sửa
+                                IconButton(
+                                    onClick = {
+                                        editedEmail = user.email
+                                        editedRole = user.role
+                                        showEditDialog = user
+                                    }
+                                ) {
+                                    Icon(
+                                        Icons.Default.Edit,
+                                        contentDescription = "Chỉnh sửa",
+                                        tint = Color(0xFF0288D1)
+                                    )
+                                }
+                                
+                                // Nút khóa/mở khóa
+                                IconButton(
+                                    onClick = {
+                                        scope.launch {
+                                            FirebaseManager.updateUserStatus(user.id, !user.isActive)
+                                            users = FirebaseManager.getAllUsers()
+                                        }
+                                    }
+                                ) {
+                                    Icon(
+                                        if (user.isActive) Icons.Default.Lock else Icons.Default.Lock,
+                                        contentDescription = if (user.isActive) "Khóa tài khoản" else "Mở khóa tài khoản",
+                                        tint = if (user.isActive) Color.Red else Color.Green
+                                    )
+                                }
+                                
+                                // Nút xóa
+                                IconButton(
+                                    onClick = {
+                                        showDeleteDialog = user
+                                    }
+                                ) {
+                                    Icon(
+                                        Icons.Default.Delete,
+                                        contentDescription = "Xóa tài khoản",
+                                        tint = Color.Red
+                                    )
+                                }
                             }
                         }
                     }
