@@ -24,6 +24,7 @@ object AuthState {
     private val _currentUserRole = MutableStateFlow<String?>(null)
     private val _isAdmin = MutableStateFlow(false)
     private val _currentUserShortId = MutableStateFlow<String?>(null)
+    private val _isLoggedIn = MutableStateFlow(auth.currentUser != null)
     private lateinit var prefs: SharedPreferences
 
     private val _currentUser = MutableStateFlow<FirebaseUser?>(auth.currentUser)
@@ -44,8 +45,8 @@ object AuthState {
     val isAdmin: StateFlow<Boolean>
         get() = _isAdmin.asStateFlow()
 
-    val isLoggedIn: Boolean
-        get() = auth.currentUser != null
+    val isLoggedIn: StateFlow<Boolean>
+        get() = _isLoggedIn.asStateFlow()
 
     fun init(context: Context) {
         prefs = context.getSharedPreferences("auth_prefs", Context.MODE_PRIVATE)
@@ -53,6 +54,7 @@ object AuthState {
         _currentUserRole.value = prefs.getString("user_role", null)
         _isAdmin.value = prefs.getBoolean("is_admin", false)
         _currentUserShortId.value = prefs.getString("short_id", null)
+        _isLoggedIn.value = auth.currentUser != null
     }
 
     private fun saveAuthState(isAdmin: Boolean, role: String?, shortId: String?) {
@@ -80,6 +82,7 @@ object AuthState {
                                     _currentUserRole.value = role
                                     _isAdmin.value = role == "admin"
                                     _currentUserShortId.value = shortId
+                                    _isLoggedIn.value = true
                                     saveAuthState(role == "admin", role, shortId)
                                     _isLoading.value = false
                                     onSuccess()
@@ -87,6 +90,7 @@ object AuthState {
                                     _currentUserRole.value = "user"
                                     _isAdmin.value = false
                                     _currentUserShortId.value = null
+                                    _isLoggedIn.value = true
                                     saveAuthState(false, "user", null)
                                     _isLoading.value = false
                                     onSuccess()
@@ -109,6 +113,7 @@ object AuthState {
         _currentUserRole.value = null
         _isAdmin.value = false
         _currentUserShortId.value = null
+        _isLoggedIn.value = false
         saveAuthState(false, null, null)
     }
 
@@ -128,6 +133,7 @@ object AuthState {
                             .addOnSuccessListener {
                                 _isAdmin.value = true
                                 _currentUserRole.value = "admin"
+                                _isLoggedIn.value = true
                                 saveAuthState(true, "admin", null)
                                 _isLoading.value = false
                                 onSuccess()

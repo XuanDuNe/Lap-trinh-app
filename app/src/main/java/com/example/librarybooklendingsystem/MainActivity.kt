@@ -31,6 +31,10 @@ import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.ModalDrawerSheet
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.librarybooklendingsystem.ui.navigation.AppNavigation
+import com.example.librarybooklendingsystem.ui.viewmodels.BookViewModel
+import com.example.librarybooklendingsystem.ui.viewmodels.CategoryViewModel
 
 class MainActivity : ComponentActivity() {
     private lateinit var analytics: FirebaseAnalytics
@@ -73,7 +77,7 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    MainScreen()
+                    AppNavigation()
                 }
             }
         }
@@ -103,11 +107,14 @@ fun MainScreen() {
     val currentRoute = navBackStackEntry?.destination?.route
     val isAdmin by AuthState.isAdmin.collectAsStateWithLifecycle()
     val userRole by AuthState.currentUserRole.collectAsStateWithLifecycle()
+    val isLoggedIn by AuthState.isLoggedIn.collectAsStateWithLifecycle()
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
+    val bookViewModel: BookViewModel = viewModel()
+    val categoryViewModel: CategoryViewModel = viewModel()
 
     LaunchedEffect(Unit) {
-        if (AuthState.isLoggedIn && (currentRoute == "login" || currentRoute == "signup")) {
+        if (isLoggedIn && (currentRoute == "login" || currentRoute == "signup")) {
             if (isAdmin && userRole == "admin") {
                 navController.navigate("admin_dashboard") {
                     popUpTo(0) { inclusive = true }
@@ -130,7 +137,8 @@ fun MainScreen() {
                         scope.launch {
                             drawerState.close()
                         }
-                    }
+                    },
+                    categoryViewModel = categoryViewModel
                 )
             }
         }
@@ -170,13 +178,13 @@ fun MainScreen() {
                     "home",
                     enterTransition = { fadeIn() },
                     exitTransition = { fadeOut() }
-                ) { HomeScreen(navController) }
-                
-                composable(
-                    "category",
-                    enterTransition = { fadeIn() },
-                    exitTransition = { fadeOut() }
-                ) { CategoryScreen(navController) }
+                ) { 
+                    HomeScreen(
+                        navController = navController,
+                        viewModel = bookViewModel,
+                        categoryViewModel = categoryViewModel
+                    )
+                }
                 
                 composable("library") { LibraryScreen(navController) }
                 composable("my_library") { MyLibraryScreen(navController) }
@@ -185,14 +193,17 @@ fun MainScreen() {
                 composable("upgrade") { UpgradeScreen(navController) }
                 composable("settings") { SettingsScreen(navController) }
                 composable("trash") { TrashScreen(navController) }
+                
                 composable(
                     route = "bookDetails/{bookId}",
                     arguments = listOf(
                         navArgument("bookId") { type = NavType.StringType }
                     )
                 ) { backStackEntry ->
-                    val bookId = backStackEntry.arguments?.getString("bookId") ?: ""
-                    BookDetailsScreen(navController = navController, bookId = bookId)
+                    val bookId = backStackEntry.arguments?.getString("bookId")
+                    if (bookId != null) {
+                        BookDetailsScreen(navController, bookId)
+                    }
                 }
                 composable(
                     route = "borrowbook/{bookId}",

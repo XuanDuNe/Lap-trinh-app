@@ -33,6 +33,12 @@ fun BottomNavigationBar(
         }
     }
 
+    val isLoggedIn = produceState(initialValue = false) {
+        AuthState.isLoggedIn.collect {
+            value = it
+        }
+    }
+
     val items = listOfNotNull(
         BottomNavItem("Trang chủ", Icons.Default.Home, "home"),
         BottomNavItem("Danh mục", Icons.Default.List, "drawer"),
@@ -71,7 +77,7 @@ fun BottomNavigationBar(
                             }
                         }
                         "account" -> {
-                            if (AuthState.isLoggedIn) {
+                            if (isLoggedIn.value) {
                                 selectedItem = index
                                 navigateToTab(navController, item.route)
                             } else {

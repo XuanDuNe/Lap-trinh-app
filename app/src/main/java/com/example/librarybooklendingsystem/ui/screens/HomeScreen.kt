@@ -38,16 +38,20 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import com.example.librarybooklendingsystem.ui.components.CommonHeader
 import com.example.librarybooklendingsystem.ui.viewmodels.BooksUiState
 import kotlinx.coroutines.delay
+import com.example.librarybooklendingsystem.ui.viewmodels.CategoryViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
     navController: NavController,
-    viewModel: BookViewModel = viewModel()
+    viewModel: BookViewModel = viewModel(),
+    categoryViewModel: CategoryViewModel = viewModel()
 ) {
     val scrollState = rememberScrollState()
     var searchQuery by remember { mutableStateOf("") }
     var currentBannerIndex by remember { mutableStateOf(0) }
+    val selectedCategory by categoryViewModel.selectedCategory.collectAsState()
+    val categoriesState by categoryViewModel.categories.collectAsState()
     
     // Danh sách các banner
     val banners = listOf(
@@ -61,6 +65,21 @@ fun HomeScreen(
         while (true) {
             delay(3000)
             currentBannerIndex = (currentBannerIndex + 1) % banners.size
+        }
+    }
+
+    // Load books when category changes
+    LaunchedEffect(selectedCategory) {
+        Log.d("HomeScreen", "Selected category changed: $selectedCategory")
+        if (selectedCategory != null) {
+            val category = categoriesState.find { it.id == selectedCategory }
+            category?.let { 
+                Log.d("HomeScreen", "Category found: ${it.name}, loading books...")
+                viewModel.getBooksByCategory(it.name) 
+            }
+        } else {
+            Log.d("HomeScreen", "Selected category is null, loading all books...")
+            viewModel.loadBooks()
         }
     }
 
@@ -94,6 +113,21 @@ fun HomeScreen(
             onBackClick = { navController.navigateUp() },
             showShareButton = false
         )
+
+        // Show selected category
+        selectedCategory?.let { categoryId ->
+            val category = categoriesState.find { it.id == categoryId }
+            category?.let {
+                Text(
+                    text = "Thể loại: ${it.name}",
+                    style = MaterialTheme.typography.titleMedium,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                    fontWeight = FontWeight.Bold
+                )
+            }
+        }
 
         // Search Bar
         OutlinedTextField(

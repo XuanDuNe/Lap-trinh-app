@@ -1,4 +1,4 @@
-package com.example.librarybooklendingsystem.ui.screens
+package com.example.librarybooklendingsystem.ui.components
 
 import android.util.Log
 import androidx.compose.foundation.background
@@ -43,24 +43,27 @@ fun MainDrawer(
     categoryViewModel: CategoryViewModel
 ) {
     val isLoggedIn by AuthState.isLoggedIn.collectAsStateWithLifecycle()
-    val currentUser by AuthState.currentUser.collectAsState(initial = null)
-    val selectedCategory by categoryViewModel.selectedCategory.collectAsState()
-
-    var userName by remember { mutableStateOf("") }
+    val currentUser by AuthState.currentUser.collectAsStateWithLifecycle()
+    val selectedCategory by categoryViewModel.selectedCategory.collectAsStateWithLifecycle()
+    
+    var userName by remember { mutableStateOf("Khách") }
     val scope = rememberCoroutineScope()
-
+    
     LaunchedEffect(currentUser) {
         if (currentUser != null) {
             scope.launch {
                 try {
                     val userInfo = FirebaseManager.getUserInfo(currentUser!!.uid)
-                    userName = userInfo?.get("name") as? String ?: ""
+                    userName = userInfo?.get("name") as? String ?: "Khách"
                     Log.d("MainDrawer", "User info: $userInfo")
                     Log.d("MainDrawer", "User name: $userName")
                 } catch (e: Exception) {
                     Log.e("MainDrawer", "Error getting user info: ${e.message}")
+                    userName = "Khách"
                 }
             }
+        } else {
+            userName = "Khách"
         }
     }
 
@@ -90,7 +93,7 @@ fun MainDrawer(
                 Spacer(modifier = Modifier.width(12.dp))
                 Column {
                     Text(
-                        text = if (userName.isNotEmpty()) userName else "Người dùng",
+                        text = userName,
                         style = MaterialTheme.typography.titleMedium,
                         color = Color.DarkGray
                     )
@@ -136,12 +139,15 @@ fun MainDrawer(
 
             categories.forEach { category ->
                 DrawerMenuItem(
-                    icon = Icons.Default.AccountBox,
+                    icon = Icons.Default.AccountCircle,
                     text = category.name,
                     selected = selectedCategory == category.id,
                     onClick = {
                         Log.d("MainDrawer", "Category selected - ID: ${category.id}, Name: ${category.name}")
                         categoryViewModel.setSelectedCategory(category.id)
+                        navController.navigate("home") {
+                            popUpTo(0) { inclusive = true }
+                        }
                         onCloseDrawer()
                     }
                 )
@@ -155,33 +161,36 @@ fun MainDrawer(
         )
 
         // Login/Logout section
-        if (isLoggedIn) {
-            NavigationDrawerItem(
-                icon = { Icon(Icons.Default.ExitToApp, contentDescription = "Đăng xuất") },
-                label = { Text("Đăng xuất") },
-                selected = false,
-                onClick = {
-                    FirebaseManager.signOut()
-                    categoryViewModel.clearSelectedCategory()
-                    navController.navigate("home") {
-                        popUpTo(0) { inclusive = true }
+        NavigationDrawerItem(
+            icon = { 
+                Icon(
+                    if (isLoggedIn) Icons.Default.ExitToApp else Icons.Default.AccountCircle,
+                    contentDescription = if (isLoggedIn) "Đăng xuất" else "Đăng nhập"
+                ) 
+            },
+            label = { Text(if (isLoggedIn) "Đăng xuất" else "Đăng nhập") },
+            selected = false,
+            onClick = {
+                if (isLoggedIn) {
+                    Log.d("MainDrawer", "Logout clicked")
+                    try {
+                        FirebaseManager.signOut()
+                        categoryViewModel.clearSelectedCategory()
+                        userName = "Khách"
+                        navController.navigate("login") {
+                            popUpTo(0) { inclusive = true }
+                        }
+                        onCloseDrawer()
+                    } catch (e: Exception) {
+                        Log.e("MainDrawer", "Error during logout: ${e.message}")
                     }
-                    onCloseDrawer()
-                },
-                modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
-            )
-        } else {
-            NavigationDrawerItem(
-                icon = { Icon(Icons.Default.AccountCircle, contentDescription = "Đăng nhập") },
-                label = { Text("Đăng nhập") },
-                selected = false,
-                onClick = {
+                } else {
                     navController.navigate("login")
                     onCloseDrawer()
-                },
-                modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
-            )
-        }
+                }
+            },
+            modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
+        )
     }
 }
 

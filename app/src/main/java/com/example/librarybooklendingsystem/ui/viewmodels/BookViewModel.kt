@@ -55,7 +55,9 @@ class BookViewModel : ViewModel() {
         viewModelScope.launch {
             try {
                 _uiState.value = BooksUiState.Loading
+                Log.d("BookViewModel", "Đang tải sách theo thể loại: $category")
                 val books = FirebaseManager.getBooksByCategory(category)
+                Log.d("BookViewModel", "Đã tải được ${books.size} sách theo thể loại $category")
                 _uiState.value = BooksUiState.Success(books)
             } catch (e: Exception) {
                 Log.e("BookViewModel", "Lỗi khi tải sách theo thể loại: ${e.message}")
