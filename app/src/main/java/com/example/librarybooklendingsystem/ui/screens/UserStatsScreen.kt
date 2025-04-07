@@ -32,7 +32,6 @@ fun UserStatsScreen(navController: NavController) {
     var users by remember { mutableStateOf<List<User>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
     var showEditDialog by remember { mutableStateOf<User?>(null) }
-    var showDeleteDialog by remember { mutableStateOf<User?>(null) }
     var editedEmail by remember { mutableStateOf("") }
     var editedRole by remember { mutableStateOf("") }
     val scope = rememberCoroutineScope()
@@ -104,65 +103,6 @@ fun UserStatsScreen(navController: NavController) {
                         }
                         Button(
                             onClick = { showEditDialog = null },
-                            colors = ButtonDefaults.buttonColors(containerColor = Color.Gray)
-                        ) {
-                            Text("Hủy")
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    // Dialog xác nhận xóa tài khoản
-    if (showDeleteDialog != null) {
-        val user = showDeleteDialog!!
-        Dialog(onDismissRequest = { showDeleteDialog = null }) {
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp),
-                shape = RoundedCornerShape(16.dp),
-                elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
-            ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Text(
-                        text = "Xác nhận xóa tài khoản",
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Color.Red
-                    )
-                    Spacer(modifier = Modifier.height(16.dp))
-                    Text(
-                        text = "Bạn có chắc chắn muốn xóa tài khoản của ${user.email}?",
-                        fontSize = 16.sp,
-                        textAlign = androidx.compose.ui.text.style.TextAlign.Center
-                    )
-                    Spacer(modifier = Modifier.height(16.dp))
-                    
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceEvenly
-                    ) {
-                        Button(
-                            onClick = {
-                                scope.launch {
-                                    FirebaseManager.deleteUser(user.id)
-                                    users = FirebaseManager.getAllUsers()
-                                    showDeleteDialog = null
-                                }
-                            },
-                            colors = ButtonDefaults.buttonColors(containerColor = Color.Red)
-                        ) {
-                            Text("Xóa")
-                        }
-                        Button(
-                            onClick = { showDeleteDialog = null },
                             colors = ButtonDefaults.buttonColors(containerColor = Color.Gray)
                         ) {
                             Text("Hủy")
@@ -324,35 +264,6 @@ fun UserStatsScreen(navController: NavController) {
                                         Icons.Default.Edit,
                                         contentDescription = "Chỉnh sửa",
                                         tint = Color(0xFF0288D1)
-                                    )
-                                }
-                                
-                                // Nút khóa/mở khóa
-                                IconButton(
-                                    onClick = {
-                                        scope.launch {
-                                            FirebaseManager.updateUserStatus(user.id, !user.isActive)
-                                            users = FirebaseManager.getAllUsers()
-                                        }
-                                    }
-                                ) {
-                                    Icon(
-                                        if (user.isActive) Icons.Default.Lock else Icons.Default.Lock,
-                                        contentDescription = if (user.isActive) "Khóa tài khoản" else "Mở khóa tài khoản",
-                                        tint = if (user.isActive) Color.Red else Color.Green
-                                    )
-                                }
-                                
-                                // Nút xóa
-                                IconButton(
-                                    onClick = {
-                                        showDeleteDialog = user
-                                    }
-                                ) {
-                                    Icon(
-                                        Icons.Default.Delete,
-                                        contentDescription = "Xóa tài khoản",
-                                        tint = Color.Red
                                     )
                                 }
                             }
