@@ -154,7 +154,8 @@ fun AccountScreen(navController: NavController) {
         CommonHeader(
             title = "Cá nhân",
             onBackClick = { /* Không làm gì khi nhấn nút back */ },
-            onShareClick = { /* Share action */ }
+            showShareButton = false,
+            showBackButton =  false
         )
 
         Column(

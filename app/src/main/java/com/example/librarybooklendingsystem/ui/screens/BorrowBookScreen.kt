@@ -47,6 +47,7 @@ fun BorrowBookScreen(
     var showError by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf("") }
     var currentUserName by remember { mutableStateOf("") }
+    var showSuccessDialog by remember { mutableStateOf(false) }
 
     // Load book data and user data if bookId is provided
     LaunchedEffect(bookId) {
@@ -65,6 +66,35 @@ fun BorrowBookScreen(
         }
     }
 
+    // Success Dialog
+    if (showSuccessDialog) {
+        AlertDialog(
+            onDismissRequest = { 
+                showSuccessDialog = false
+                navController.navigateUp()
+            },
+            title = { Text("Thông báo") },
+            text = { 
+                Column {
+                    Text("Yêu cầu mượn sách của bạn đã được gửi thành công!")
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text("Vui lòng đợi admin duyệt yêu cầu của bạn.")
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = { 
+                        showSuccessDialog = false
+                        navController.navigateUp()
+                    }
+                ) {
+                    Text("Đóng")
+                }
+            }
+        )
+    }
+
+    // Error Dialog
     if (showError) {
         AlertDialog(
             onDismissRequest = { showError = false },
@@ -86,7 +116,8 @@ fun BorrowBookScreen(
         CommonHeader(
             title = "Mượn sách",
             onBackClick = { navController.navigateUp() },
-            onShareClick = { /* Share action */ }
+            onShareClick = { /* Share action */ },
+            showShareButton = false
         )
 
         // Nội dung trang mượn sách
@@ -232,12 +263,9 @@ fun BorrowBookScreen(
                             // Tạo yêu cầu mượn sách
                             FirebaseManager.createBorrowRequest(borrowData)
                             
-                            // Hiển thị thông báo thành công
-                            errorMessage = "Yêu cầu mượn sách đã được gửi. Vui lòng đợi admin duyệt."
-                            showError = true
+                            // Set state to show success dialog
+                            showSuccessDialog = true
                             
-                            // Quay về màn hình trước
-                            navController.navigateUp()
                         } catch (e: Exception) {
                             Log.e("BorrowBookScreen", "Lỗi khi mượn sách: ${e.message}")
                             errorMessage = e.message ?: "Có lỗi xảy ra khi mượn sách"

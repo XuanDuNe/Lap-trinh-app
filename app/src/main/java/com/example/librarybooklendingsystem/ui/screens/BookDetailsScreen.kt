@@ -45,7 +45,8 @@ fun BookDetailsScreen(navController: NavController, bookId: String) {
             CommonHeader(
                 title = "Chi tiết sách",
                 onBackClick = { navController.navigateUp() },
-                onShareClick = { /* TODO: Implement share */ }
+                onShareClick = { /* TODO: Implement share */ },
+                showShareButton = false
             )
         }
     ) { paddingValues ->

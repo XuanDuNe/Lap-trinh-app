@@ -113,7 +113,8 @@ fun HomeScreen(
         CommonHeader(
             title = "My Library",
             onBackClick = { navController.navigateUp() },
-            showShareButton = false
+            showShareButton = false,
+            showBackButton = false
         )
 
         // Show selected category

@@ -21,7 +21,8 @@ fun CommonHeader(
     title: String,
     onBackClick: () -> Unit,
     onShareClick: () -> Unit = {},
-    showShareButton: Boolean = true
+    showShareButton: Boolean = true,
+    showBackButton: Boolean =true
 ) {
     Box(
         modifier = Modifier
@@ -29,20 +30,22 @@ fun CommonHeader(
             .height(80.dp)
             .background(Color(0xFF0093AB))
     ) {
-        // Back button
-        IconButton(
-            onClick = onBackClick,
-            modifier = Modifier
-                .align(Alignment.CenterStart)
-                .padding(start = 8.dp)
-                .size(48.dp)
-        ) {
-            Icon(
-                Icons.Default.ArrowBack,
-                contentDescription = "Back",
-                tint = Color.White,
-                modifier = Modifier.size(32.dp)
-            )
+        if (showBackButton) {
+            // Back button
+            IconButton(
+                onClick = onBackClick,
+                modifier = Modifier
+                    .align(Alignment.CenterStart)
+                    .padding(start = 8.dp)
+                    .size(48.dp)
+            ) {
+                Icon(
+                    Icons.Default.ArrowBack,
+                    contentDescription = "Back",
+                    tint = Color.White,
+                    modifier = Modifier.size(32.dp)
+                )
+            }
         }
         
         // Title
