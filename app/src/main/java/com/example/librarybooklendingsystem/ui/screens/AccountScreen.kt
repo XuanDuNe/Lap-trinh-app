@@ -265,6 +265,7 @@ fun BorrowedBookGridItem(
 
     val bookTitle = book["bookTitle"] as? String ?: "Không có tiêu đề"
     val authorName = book["author_name"] as? String ?: "Không có tác giả"
+    val status = book["status"] as? String ?: "Không xác định"
 
     val currentDate = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(Date())
 
@@ -340,6 +341,15 @@ fun BorrowedBookGridItem(
                     text = "Trả: $expectedReturnDate",
                     fontSize = 9.sp,
                     color = Color.Gray,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    lineHeight = 9.sp,
+                    modifier = Modifier.offset(y = (-2).dp)
+                )
+                Text(
+                    text = if (status == "Chờ duyệt trả") "Đang chờ duyệt trả" else "Đang mượn",
+                    fontSize = 9.sp,
+                    color = if (status == "Chờ duyệt trả") Color(0xFFFFA000) else Color(0xFF4CAF50),
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                     lineHeight = 9.sp,

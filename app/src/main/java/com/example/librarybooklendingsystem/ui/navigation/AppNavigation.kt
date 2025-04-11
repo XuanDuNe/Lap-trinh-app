@@ -306,6 +306,16 @@ private fun MainContent(
                     PendingBooksApprovalScreen(navController) 
                 }
             }
+
+            composable("pending_books_return") { 
+                if (!isLoggedIn) {
+                    LaunchedEffect(Unit) {
+                        navController.navigate("login")
+                    }
+                } else {
+                    PendingBooksReturnScreen(navController) 
+                }
+            }
         }
     }
 } 

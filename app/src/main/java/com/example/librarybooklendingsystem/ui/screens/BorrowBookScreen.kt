@@ -219,15 +219,25 @@ fun BorrowBookScreen(
                                 "author" to bookDetails.author_name,
                                 "coverUrl" to bookDetails.coverUrl,
                                 "studentName" to studentName.value.text,
-                                "expectedReturnDate" to expectedReturnDate.value.text
+                                "expectedReturnDate" to expectedReturnDate.value.text,
+                                "userId" to (AuthState.currentUserId ?: ""),
+                                "bookId" to (bookId ?: ""),
+                                "bookTitle" to bookDetails.title,
+                                "author_name" to bookDetails.author_name,
+                                "bookCover" to bookDetails.coverUrl
                             )
                             
                             Log.d("BorrowBookScreen", "Dữ liệu mượn sách sẽ lưu: $borrowData")
 
-                            FirebaseManager.borrowBook(AuthState.currentUserId ?: "", borrowData)
-                            navController.navigate("account") {
-                                popUpTo("borrowbook/${bookId}") { inclusive = true }
-                            }
+                            // Tạo yêu cầu mượn sách
+                            FirebaseManager.createBorrowRequest(borrowData)
+                            
+                            // Hiển thị thông báo thành công
+                            errorMessage = "Yêu cầu mượn sách đã được gửi. Vui lòng đợi admin duyệt."
+                            showError = true
+                            
+                            // Quay về màn hình trước
+                            navController.navigateUp()
                         } catch (e: Exception) {
                             Log.e("BorrowBookScreen", "Lỗi khi mượn sách: ${e.message}")
                             errorMessage = e.message ?: "Có lỗi xảy ra khi mượn sách"

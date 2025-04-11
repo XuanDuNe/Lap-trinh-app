@@ -386,7 +386,6 @@ object FirebaseManager {
     suspend fun createBorrowRequest(borrowData: Map<String, Any>): String? {
         return try {
             Log.d("FirebaseManager", "Tạo yêu cầu mượn sách với dữ liệu: $borrowData")
-            Log.d("FirebaseManager", "Tên tác giả trong yêu cầu: ${borrowData["author_name"]}")
 
             // Kiểm tra user đã đăng nhập
             val userId = borrowData["userId"] as? String
@@ -400,15 +399,26 @@ object FirebaseManager {
                 throw Exception("Không tìm thấy thông tin sách")
             }
 
-            // Thêm yêu cầu mượn sách
-            val docRef = db.collection(BORROWS_COLLECTION)
-                .add(borrowData)
+            // Kiểm tra xem người dùng đã mượn sách này và chưa trả hay chưa
+            val existingBorrow = db.collection(BORROWS_COLLECTION)
+                .whereEqualTo("userId", userId)
+                .whereEqualTo("bookId", bookId)
+                .whereEqualTo("status", "Đang mượn")
+                .get()
                 .await()
 
-            // Cập nhật trạng thái sách
-            db.collection(BOOKS_COLLECTION)
-                .document(bookId)
-                .update("status", BookStatus.PENDING)
+            if (!existingBorrow.isEmpty) {
+                throw Exception("Bạn đã mượn sách này và chưa trả. Vui lòng trả sách trước khi mượn lại.")
+            }
+
+            // Thêm yêu cầu mượn sách với trạng thái pending
+            val borrowRequest = borrowData.toMutableMap().apply {
+                put("status", "pending")
+                put("createdAt", Timestamp(Date()))
+            }
+
+            val docRef = db.collection(BORROWS_COLLECTION)
+                .add(borrowRequest)
                 .await()
 
             Log.d("FirebaseManager", "Đã tạo yêu cầu mượn sách thành công với ID: ${docRef.id}")
@@ -419,27 +429,84 @@ object FirebaseManager {
         }
     }
 
-    // Lấy danh sách sách đã mượn của user
-    suspend fun getUserBorrowedBooks(userId: String): List<Map<String, Any>>? {
-        return try {
-            val querySnapshot = db.collection(BORROWS_COLLECTION)
-                .whereEqualTo("userId", userId)
-                .whereEqualTo("status", "Đang mượn")
+    suspend fun approveBorrowRequest(borrowId: String) {
+        try {
+            // Lấy thông tin yêu cầu mượn sách
+            val borrowDoc = db.collection(BORROWS_COLLECTION)
+                .document(borrowId)
                 .get()
                 .await()
 
-            val books = mutableListOf<Map<String, Any>>()
-            for (document in querySnapshot.documents) {
-                val bookData = document.data
-                if (bookData != null) {
-                    Log.d("FirebaseManager", "Dữ liệu sách mượn: $bookData")
-                    books.add(bookData)
+            val borrowData = borrowDoc.data
+            if (borrowData != null) {
+                val expectedReturnDate = borrowData["expectedReturnDate"] as? String
+                
+                // Cập nhật trạng thái yêu cầu mượn sách
+                val dateFormat = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
+                val returnDate = try {
+                    dateFormat.parse(expectedReturnDate)
+                } catch (e: Exception) {
+                    // Nếu không có ngày trả dự kiến hoặc định dạng không hợp lệ, sử dụng ngày mặc định (100 ngày sau)
+                    val calendar = Calendar.getInstance()
+                    calendar.add(Calendar.DAY_OF_MONTH, 100)
+                    calendar.time
+                }
+
+                db.collection(BORROWS_COLLECTION)
+                    .document(borrowId)
+                    .update(
+                        mapOf(
+                            "status" to "Đang mượn",
+                            "approvedAt" to Timestamp(Date()),
+                            "borrowDate" to Timestamp(Date()),
+                            "expectedReturnDate" to Timestamp(returnDate)
+                        )
+                    )
+                    .await()
+
+                Log.d("FirebaseManager", "Đã duyệt yêu cầu mượn sách thành công")
+            }
+        } catch (e: Exception) {
+            Log.e("FirebaseManager", "Lỗi khi duyệt yêu cầu mượn sách: ${e.message}")
+            throw e
+        }
+    }
+
+    suspend fun getPendingBorrowRequests(): List<Map<String, Any>> {
+        return try {
+            val querySnapshot = db.collection(BORROWS_COLLECTION)
+                .whereEqualTo("status", "pending")
+                .get()
+                .await()
+
+            querySnapshot.documents.mapNotNull { doc ->
+                doc.data?.toMutableMap()?.apply {
+                    put("id", doc.id)
                 }
             }
-            books
         } catch (e: Exception) {
-            Log.e("FirebaseManager", "Lỗi khi lấy sách đã mượn: ${e.message}")
-            null
+            Log.e("FirebaseManager", "Lỗi khi lấy danh sách yêu cầu mượn sách: ${e.message}")
+            emptyList()
+        }
+    }
+
+    // Lấy danh sách sách đã mượn của user
+    suspend fun getUserBorrowedBooks(userId: String): List<Map<String, Any>> {
+        return try {
+            val querySnapshot = db.collection(BORROWS_COLLECTION)
+                .whereEqualTo("userId", userId)
+                .whereIn("status", listOf("Đang mượn", "Chờ duyệt trả"))
+                .get()
+                .await()
+
+            querySnapshot.documents.mapNotNull { doc ->
+                doc.data?.toMutableMap()?.apply {
+                    put("id", doc.id)
+                }
+            }
+        } catch (e: Exception) {
+            Log.e("FirebaseManager", "Lỗi khi lấy danh sách sách đang mượn: ${e.message}")
+            emptyList()
         }
     }
 
@@ -563,7 +630,6 @@ object FirebaseManager {
             Log.d("FirebaseManager", "Bắt đầu trả sách cho user: $userId")
             val bookId = book["bookId"] as? String ?: return
             val bookTitle = book["bookTitle"] as? String ?: ""
-            val currentDate = Date() // Lấy thời gian hiện tại của thiết bị
             
             // Tìm document chứa thông tin mượn sách
             val querySnapshot = db.collection(BORROWS_COLLECTION)
@@ -580,20 +646,17 @@ object FirebaseManager {
                 return
             }
 
-            // Cập nhật trạng thái sách thành "Đã trả"
+            // Cập nhật trạng thái sách thành "Chờ duyệt trả"
             for (document in querySnapshot.documents) {
                 try {
                     val updateData = mapOf(
-                        "status" to "Đã trả",
-                        "actualReturnDate" to Timestamp(currentDate) // Sử dụng Timestamp
+                        "status" to "Chờ duyệt trả",
+                        "returnRequestDate" to Timestamp(Date())
                     )
                     
                     Log.d("FirebaseManager", "Cập nhật document ${document.id} với dữ liệu: $updateData")
                     
                     document.reference.update(updateData).await()
-                    
-                    // Track book return event
-                    logBookReturn(userId, bookId, bookTitle)
                     
                     Log.d("FirebaseManager", "Đã cập nhật trạng thái sách thành công")
                 } catch (e: Exception) {
@@ -926,6 +989,91 @@ object FirebaseManager {
         } catch (e: Exception) {
             Log.e("FirebaseManager", "Lỗi khi lấy tên người dùng: ${e.message}")
             "Không xác định"
+        }
+    }
+
+    // Thêm hàm để tạo yêu cầu trả sách
+    suspend fun createReturnRequest(borrowId: String): Boolean {
+        return try {
+            // Lấy thông tin mượn sách
+            val borrowDoc = db.collection(BORROWS_COLLECTION)
+                .document(borrowId)
+                .get()
+                .await()
+
+            val borrowData = borrowDoc.data
+            if (borrowData != null) {
+                // Cập nhật trạng thái thành "Chờ duyệt trả"
+                db.collection(BORROWS_COLLECTION)
+                    .document(borrowId)
+                    .update(
+                        mapOf(
+                            "status" to "Chờ duyệt trả",
+                            "returnRequestDate" to Timestamp(Date())
+                        )
+                    )
+                    .await()
+
+                Log.d("FirebaseManager", "Đã tạo yêu cầu trả sách thành công")
+                true
+            } else {
+                false
+            }
+        } catch (e: Exception) {
+            Log.e("FirebaseManager", "Lỗi khi tạo yêu cầu trả sách: ${e.message}")
+            false
+        }
+    }
+
+    // Thêm hàm để lấy danh sách yêu cầu trả sách đang chờ duyệt
+    suspend fun getPendingReturnRequests(): List<Map<String, Any>> {
+        return try {
+            val querySnapshot = db.collection(BORROWS_COLLECTION)
+                .whereEqualTo("status", "Chờ duyệt trả")
+                .get()
+                .await()
+
+            querySnapshot.documents.mapNotNull { doc ->
+                doc.data?.toMutableMap()?.apply {
+                    put("id", doc.id)
+                }
+            }
+        } catch (e: Exception) {
+            Log.e("FirebaseManager", "Lỗi khi lấy danh sách yêu cầu trả sách: ${e.message}")
+            emptyList()
+        }
+    }
+
+    // Thêm hàm để duyệt yêu cầu trả sách
+    suspend fun approveReturnRequest(borrowId: String): Boolean {
+        return try {
+            // Lấy thông tin mượn sách
+            val borrowDoc = db.collection(BORROWS_COLLECTION)
+                .document(borrowId)
+                .get()
+                .await()
+
+            val borrowData = borrowDoc.data
+            if (borrowData != null) {
+                // Cập nhật trạng thái thành "Đã trả"
+                db.collection(BORROWS_COLLECTION)
+                    .document(borrowId)
+                    .update(
+                        mapOf(
+                            "status" to "Đã trả",
+                            "returnDate" to Timestamp(Date())
+                        )
+                    )
+                    .await()
+
+                Log.d("FirebaseManager", "Đã duyệt yêu cầu trả sách thành công")
+                true
+            } else {
+                false
+            }
+        } catch (e: Exception) {
+            Log.e("FirebaseManager", "Lỗi khi duyệt yêu cầu trả sách: ${e.message}")
+            false
         }
     }
 } 

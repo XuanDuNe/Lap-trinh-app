@@ -7,7 +7,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.KeyboardArrowLeft
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -17,24 +17,28 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.librarybooklendingsystem.R
+import com.example.librarybooklendingsystem.data.FirebaseManager
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PendingBooksApprovalScreen(navController: NavController) {
-    val pendingBooks = listOf(
-        "Nguyễn Văn A" to "Lập trình Kotlin",
-        "Trần Thị B" to "Phát triển Android",
-        "Lê Văn C" to "Học Jetpack Compose",
-        "Nguyễn Văn A" to "Lập trình Kotlin",
-        "Trần Thị B" to "Phát triển Android",
-        "Lê Văn C" to "Học Jetpack Compose",
-        "Nguyễn Văn A" to "Lập trình Kotlin",
-        "Trần Thị B" to "Phát triển Android",
-        "Lê Văn C" to "Học Jetpack Compose",
-        "Nguyễn Văn A" to "Lập trình Kotlin",
-        "Trần Thị B" to "Phát triển Android",
-        "Lê Văn C" to "Học Jetpack Compose"
-    )
+    var pendingBooks by remember { mutableStateOf<List<Map<String, Any>>>(emptyList()) }
+    var isLoading by remember { mutableStateOf(true) }
+    val scope = rememberCoroutineScope()
+
+    // Load danh sách yêu cầu mượn sách
+    LaunchedEffect(Unit) {
+        scope.launch {
+            try {
+                pendingBooks = FirebaseManager.getPendingBorrowRequests()
+            } catch (e: Exception) {
+                // Xử lý lỗi nếu cần
+            } finally {
+                isLoading = false
+            }
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -117,41 +121,69 @@ fun PendingBooksApprovalScreen(navController: NavController) {
             }
 
             Spacer(modifier = Modifier.height(16.dp))
-            LazyColumn(
-                modifier = Modifier.fillMaxSize()
-            ) {
-                items(pendingBooks) { book ->
-                    Card(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 4.dp),
-                        shape = RoundedCornerShape(8.dp),
-                        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-                    ) {
-                        Column(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(16.dp)
+
+            if (isLoading) {
+                CircularProgressIndicator(
+                    modifier = Modifier.padding(16.dp),
+                    color = Color(0xFF0288D1)
+                )
+            } else if (pendingBooks.isEmpty()) {
+                Text(
+                    text = "Không có yêu cầu mượn sách nào cần duyệt",
+                    fontSize = 16.sp,
+                    color = Color.Gray,
+                    modifier = Modifier.padding(16.dp)
+                )
+            } else {
+                LazyColumn(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    items(pendingBooks) { book ->
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(8.dp),
+                            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
                         ) {
                             Row(
-                                modifier = Modifier.fillMaxWidth(),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(16.dp),
                                 horizontalArrangement = Arrangement.SpaceBetween,
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Column {
                                     Text(
-                                        text = "Tên người mượn: ${book.first}",
+                                        text = "Tên người mượn: ${book["studentName"]}",
                                         fontSize = 16.sp,
                                         color = MaterialTheme.colorScheme.onSurface
                                     )
                                     Text(
-                                        text = "Tên sách: ${book.second}",
+                                        text = "Tên sách: ${book["bookTitle"]}",
                                         fontSize = 16.sp,
                                         color = MaterialTheme.colorScheme.onSurface
                                     )
+                                    Text(
+                                        text = "Ngày trả dự kiến: ${book["expectedReturnDate"]}",
+                                        fontSize = 14.sp,
+                                        color = Color.Gray
+                                    )
                                 }
                                 Button(
-                                    onClick = { /* Xử lý duyệt sách */ },
+                                    onClick = {
+                                        scope.launch {
+                                            try {
+                                                val borrowId = book["id"] as? String
+                                                if (borrowId != null) {
+                                                    FirebaseManager.approveBorrowRequest(borrowId)
+                                                    // Cập nhật lại danh sách
+                                                    pendingBooks = FirebaseManager.getPendingBorrowRequests()
+                                                }
+                                            } catch (e: Exception) {
+                                                // Xử lý lỗi nếu cần
+                                            }
+                                        }
+                                    },
                                     colors = ButtonDefaults.buttonColors(
                                         containerColor = Color(0xFF0288D1)
                                     )
