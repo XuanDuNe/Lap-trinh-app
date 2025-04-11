@@ -21,6 +21,7 @@ import androidx.navigation.NavController
 import com.example.librarybooklendingsystem.R
 import com.example.librarybooklendingsystem.data.AuthState
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.google.firebase.auth.FirebaseAuth
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -126,6 +127,14 @@ fun LoginScreen(navController: NavController) {
                     password = password,
                     context = context,
                     onSuccess = {
+                        // Check if email is verified
+                        val user = FirebaseAuth.getInstance().currentUser
+                        if (user != null && !user.isEmailVerified) {
+                            errorMessage = "Please verify your email before logging in"
+                            isLoading = false
+                            return@signIn
+                        }
+                        
                         isLoading = false
                         if (isAdmin) {
                             navController.navigate("admin_dashboard") {

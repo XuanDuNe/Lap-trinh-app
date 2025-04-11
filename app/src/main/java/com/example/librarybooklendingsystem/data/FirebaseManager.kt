@@ -640,11 +640,18 @@ object FirebaseManager {
             
             val currentDate = Date() // Ngày mượn hiện tại
             
-            // Tính ngày trả dự kiến (100 ngày sau)
-            val calendar = Calendar.getInstance()
-            calendar.time = currentDate
-            calendar.add(Calendar.DAY_OF_MONTH, 100)
-            val expectedReturnDate = calendar.time
+            // Sử dụng ngày trả dự kiến từ dữ liệu đầu vào
+            val expectedReturnDateStr = book["expectedReturnDate"] as? String ?: ""
+            val dateFormat = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
+            val expectedReturnDate = try {
+                dateFormat.parse(expectedReturnDateStr)
+            } catch (e: Exception) {
+                // Nếu không có ngày trả dự kiến hoặc định dạng không hợp lệ, sử dụng ngày mặc định (100 ngày sau)
+                val calendar = Calendar.getInstance()
+                calendar.time = currentDate
+                calendar.add(Calendar.DAY_OF_MONTH, 100)
+                calendar.time
+            }
             
             val borrowData = mapOf(
                 "userId" to userId,

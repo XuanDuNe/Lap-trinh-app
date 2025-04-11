@@ -271,7 +271,7 @@ fun BorrowedBookGridItem(
     val dateFormat = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
     val expectedReturnDate = try {
         when (val date = book["expectedReturnDate"]) {
-            is Long -> dateFormat.format(Date(date))
+            is com.google.firebase.Timestamp -> dateFormat.format(date.toDate())
             is String -> date
             else -> "Chưa có"
         }

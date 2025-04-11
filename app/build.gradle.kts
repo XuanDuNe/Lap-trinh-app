@@ -38,6 +38,32 @@ android {
     buildFeatures {
         compose = true
     }
+
+    packaging {
+        resources {
+            excludes += setOf(
+                "META-INF/DEPENDENCIES",
+                "META-INF/LICENSE",
+                "META-INF/LICENSE.txt",
+                "META-INF/license.txt",
+                "META-INF/NOTICE",
+                "META-INF/NOTICE.txt",
+                "META-INF/notice.txt",
+                "META-INF/NOTICE.md",
+                "META-INF/ASL2.0",
+                "META-INF/*.kotlin_module",
+                "META-INF/mailcap",
+                "META-INF/mimetypes.default",
+                "META-INF/*.md",
+                "META-INF/*.version",
+                "META-INF/versions/**"
+            )
+            pickFirsts += setOf(
+                "META-INF/NOTICE.md",
+                "META-INF/LICENSE.md"
+            )
+        }
+    }
 }
 
 dependencies {
@@ -63,6 +89,9 @@ dependencies {
     implementation("com.google.firebase:firebase-auth")
     implementation("com.google.firebase:firebase-firestore")
     
+    // Add coroutines play services
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.7.3")
+    
     // Coil for image loading
     implementation("io.coil-kt:coil-compose:2.6.0")
 
@@ -78,4 +107,12 @@ dependencies {
     debugImplementation("androidx.compose.ui:ui-test-manifest")
     implementation("androidx.compose.ui:ui-text-google-fonts:1.6.0")
 
+    // Email validation dependencies - using only android specific versions
+    implementation("com.sun.mail:android-mail:1.6.7") {
+        exclude(group = "javax.activation", module = "activation")
+        exclude(group = "javax.mail", module = "mail")
+    }
+    implementation("com.sun.mail:android-activation:1.6.7") {
+        exclude(group = "com.sun.activation", module = "javax.activation")
+    }
 }

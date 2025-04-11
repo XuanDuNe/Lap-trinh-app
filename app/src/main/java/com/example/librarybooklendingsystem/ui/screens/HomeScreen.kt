@@ -73,9 +73,9 @@ fun HomeScreen(
         Log.d("HomeScreen", "Selected category changed: $selectedCategory")
         if (selectedCategory != null) {
             val category = categoriesState.find { it.id == selectedCategory }
-            category?.let { 
+            category?.let {
                 Log.d("HomeScreen", "Category found: ${it.name}, loading books...")
-                viewModel.getBooksByCategory(it.name) 
+                viewModel.getBooksByCategory(it.name)
             }
         } else {
             Log.d("HomeScreen", "Selected category is null, loading all books...")
@@ -255,7 +255,7 @@ fun HomeScreen(
                                 contentPadding = PaddingValues(horizontal = 8.dp),
                                 horizontalArrangement = Arrangement.spacedBy(8.dp)
                             ) {
-                                items(filteredBooks.sortedByDescending { it.createdAt }.take(10)) { book ->
+                                items(filteredBooks.sortedByDescending { it.createdAt }.take(20)) { book ->
                                     FirebaseBookItem(
                                         navController = navController,
                                         book = book
@@ -289,7 +289,7 @@ fun FirebaseBookItem(
         modifier = Modifier
             .width(120.dp)
             .height(180.dp)
-            .clickable { 
+            .clickable {
                 navController.navigate("bookDetails/${book.id}")
             },
         colors = CardDefaults.cardColors(
