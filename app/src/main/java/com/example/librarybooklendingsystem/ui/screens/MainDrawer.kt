@@ -32,7 +32,6 @@ val categories = listOf(
     Category("Văn học thiếu nhi", "Văn học thiếu nhi"),
     Category("Khoa học viễn tưởng", "Khoa học viễn tưởng"),
     Category("Kỹ năng sống", "Kỹ năng sống"),
-    Category("Văn Học", "Văn Học")
 )
 
 @OptIn(ExperimentalMaterial3Api::class)

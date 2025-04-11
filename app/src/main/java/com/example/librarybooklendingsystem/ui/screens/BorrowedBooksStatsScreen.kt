@@ -38,7 +38,6 @@ fun BorrowedBooksStatsScreen(navController: NavController) {
         "Văn học thiếu nhi",
         "Khoa học viễn tưởng",
         "Kỹ năng sống",
-        "Văn Học"
     )
 
     var borrows by remember { mutableStateOf<List<Borrow>>(emptyList()) }

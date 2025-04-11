@@ -56,8 +56,10 @@ fun HomeScreen(
     // Danh sách các banner
     val banners = listOf(
         R.drawable.logouth,
-        R.drawable.yeu,
-        R.drawable.yeumbangmatgiuembangtim
+        R.drawable.image2,
+        R.drawable.image1,
+        R.drawable.image3,
+        R.drawable.image4
     )
 
     // Tự động chuyển đổi banner mỗi 3 giây
