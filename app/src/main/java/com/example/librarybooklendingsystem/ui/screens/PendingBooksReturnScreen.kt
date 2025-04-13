@@ -149,14 +149,16 @@ fun PendingBooksReturnScreen(
                             shape = RoundedCornerShape(8.dp),
                             elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
                         ) {
-                            Row(
+                            Box(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .padding(16.dp),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
+                                    .padding(16.dp)
                             ) {
-                                Column {
+                                Column(
+                                    modifier = Modifier
+                                        .align(Alignment.CenterStart)
+                                        .padding(end = 100.dp) // chừa không gian cho nút
+                                ) {
                                     Text(
                                         text = "Tên người mượn: ${returnRequest["studentName"]}",
                                         fontSize = 16.sp,
@@ -173,6 +175,7 @@ fun PendingBooksReturnScreen(
                                         color = Color.Gray
                                     )
                                 }
+
                                 Button(
                                     onClick = {
                                         scope.launch {
@@ -180,7 +183,6 @@ fun PendingBooksReturnScreen(
                                                 val returnId = returnRequest["id"] as? String
                                                 if (returnId != null) {
                                                     FirebaseManager.approveReturnRequest(returnId)
-                                                    // Cập nhật lại danh sách
                                                     pendingReturns = FirebaseManager.getPendingReturnRequests()
                                                 }
                                             } catch (e: Exception) {
@@ -190,14 +192,13 @@ fun PendingBooksReturnScreen(
                                     },
                                     colors = ButtonDefaults.buttonColors(
                                         containerColor = Color(0xFF0288D1)
-                                    )
+                                    ),
+                                    modifier = Modifier.align(Alignment.TopEnd)
                                 ) {
-                                    Text(
-                                        text = "Duyệt",
-                                        color = Color.White
-                                    )
+                                    Text("Duyệt", color = Color.White)
                                 }
                             }
+
                         }
                     }
                 }

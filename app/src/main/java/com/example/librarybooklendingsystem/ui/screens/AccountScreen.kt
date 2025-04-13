@@ -76,8 +76,14 @@ fun AccountScreen(navController: NavController) {
                                         FirebaseManager.returnBook(currentUser?.uid ?: "", book)
 
                                         // Xóa sách khỏi danh sách hiển thị ngay lập tức
-                                        borrowedBooks = borrowedBooks.filter {
-                                            (it["bookId"] as? String) != bookId
+                                        borrowedBooks = borrowedBooks.map {
+                                            if ((it["bookId"] as? String) == bookId) {
+                                                it.toMutableMap().apply {
+                                                    this["status"] = "Chờ duyệt trả"
+                                                }
+                                            } else {
+                                                it
+                                            }
                                         }
                                     }
                                 } catch (e: Exception) {
@@ -286,7 +292,7 @@ fun BorrowedBookGridItem(
         modifier = Modifier
             .padding(4.dp)
             .width(110.dp)
-            .height(200.dp)
+            .height(220.dp)
             .clickable { onBookClick() },
         shape = RoundedCornerShape(12.dp),
         elevation = CardDefaults.cardElevation(

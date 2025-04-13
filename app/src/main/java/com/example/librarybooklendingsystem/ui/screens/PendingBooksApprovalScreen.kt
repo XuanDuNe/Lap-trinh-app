@@ -149,10 +149,11 @@ fun PendingBooksApprovalScreen(navController: NavController) {
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .padding(16.dp),
-                                horizontalArrangement = Arrangement.SpaceBetween,
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Column {
+                                Column(
+                                    modifier = Modifier.weight(1f) // Chiếm phần còn lại
+                                ) {
                                     Text(
                                         text = "Tên người mượn: ${book["studentName"]}",
                                         fontSize = 16.sp,
@@ -169,6 +170,9 @@ fun PendingBooksApprovalScreen(navController: NavController) {
                                         color = Color.Gray
                                     )
                                 }
+
+                                Spacer(modifier = Modifier.width(12.dp)) // Tạo khoảng cách nhỏ giữa văn bản và nút
+
                                 Button(
                                     onClick = {
                                         scope.launch {
@@ -176,7 +180,6 @@ fun PendingBooksApprovalScreen(navController: NavController) {
                                                 val borrowId = book["id"] as? String
                                                 if (borrowId != null) {
                                                     FirebaseManager.approveBorrowRequest(borrowId)
-                                                    // Cập nhật lại danh sách
                                                     pendingBooks = FirebaseManager.getPendingBorrowRequests()
                                                 }
                                             } catch (e: Exception) {
@@ -186,7 +189,8 @@ fun PendingBooksApprovalScreen(navController: NavController) {
                                     },
                                     colors = ButtonDefaults.buttonColors(
                                         containerColor = Color(0xFF0288D1)
-                                    )
+                                    ),
+                                    modifier = Modifier.defaultMinSize(minWidth = 80.dp) // đảm bảo nút không quá nhỏ
                                 ) {
                                     Text(
                                         text = "Duyệt",
@@ -194,6 +198,7 @@ fun PendingBooksApprovalScreen(navController: NavController) {
                                     )
                                 }
                             }
+
                         }
                     }
                 }
