@@ -22,6 +22,9 @@ import com.example.librarybooklendingsystem.R
 import com.example.librarybooklendingsystem.data.AuthState
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.google.firebase.auth.FirebaseAuth
+import androidx.compose.ui.text.font.Font
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -58,13 +61,15 @@ fun LoginScreen(navController: NavController) {
         Text(
             text = "Login",
             style = MaterialTheme.typography.headlineLarge,
-            modifier = Modifier.padding(bottom = 8.dp)
+            modifier = Modifier.padding(bottom = 8.dp),
+            fontFamily = FontFamily(Font(R.font.poppins_bold, FontWeight.Bold))
         )
 
         Text(
             text = "Welcome back!",
             style = MaterialTheme.typography.bodyLarge,
-            modifier = Modifier.padding(bottom = 32.dp)
+            modifier = Modifier.padding(bottom = 32.dp),
+            fontFamily = FontFamily(Font(R.font.poppins_bold, FontWeight.Bold))
         )
 
         OutlinedTextField(
@@ -170,7 +175,9 @@ fun LoginScreen(navController: NavController) {
             } else {
                 Text(
                     "Sign In",
-                    style = MaterialTheme.typography.bodyLarge
+                    style = MaterialTheme.typography.bodyLarge,
+                    fontFamily = FontFamily(Font(R.font.poppins_bold, FontWeight.Bold)),
+                    color = Color.White
                 )
             }
         }
