@@ -12,11 +12,14 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import com.example.librarybooklendingsystem.data.AuthState
+import com.example.librarybooklendingsystem.ui.viewmodels.CategoryViewModel
+import androidx.lifecycle.viewmodel.compose.viewModel
 
 @Composable
 fun BottomNavigationBar(
     navController: NavController,
-    onOpenDrawer: () -> Unit = {}
+    onOpenDrawer: () -> Unit = {},
+    categoryViewModel: CategoryViewModel = viewModel()
 ) {
     var selectedItem by remember { mutableStateOf(0) }
     var showLoginDialog by remember { mutableStateOf(false) }
@@ -65,6 +68,7 @@ fun BottomNavigationBar(
                         }
                         "home" -> {
                             selectedItem = index
+                            categoryViewModel.clearSelectedCategory()
                             navController.navigate("home") {
                                 popUpTo(0) { inclusive = true }
                                 launchSingleTop = true

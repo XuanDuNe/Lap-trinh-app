@@ -152,7 +152,8 @@ fun MainScreen() {
                             scope.launch {
                                 drawerState.open()
                             }
-                        }
+                        },
+                        categoryViewModel = categoryViewModel
                     )
                 }
             }
