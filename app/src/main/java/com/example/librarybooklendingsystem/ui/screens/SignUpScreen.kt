@@ -25,7 +25,6 @@ import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.example.librarybooklendingsystem.R
 import com.example.librarybooklendingsystem.data.FirebaseManager
-import com.example.librarybooklendingsystem.ui.components.CommonHeader
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.firestore.FirebaseFirestore
@@ -35,6 +34,10 @@ import kotlinx.coroutines.delay
 import com.google.android.gms.tasks.Task
 import kotlinx.coroutines.tasks.await
 import android.util.Log
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.font.Font
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -56,12 +59,6 @@ fun SignUpScreen(navController: NavController) {
             .fillMaxSize()
             .background(Color.White)
     ) {
-        CommonHeader(
-            title = "Sign Up",
-            onBackClick = { navController.navigateUp() },
-            onShareClick = { /* Share action */ }
-        )
-
         Column(
             modifier = Modifier
                 .fillMaxWidth()
@@ -75,6 +72,13 @@ fun SignUpScreen(navController: NavController) {
                 modifier = Modifier
                     .size(120.dp)
                     .padding(vertical = 16.dp)
+            )
+
+            Text(
+                text = "Create your new account now",
+                textAlign = TextAlign.Center,
+                fontFamily = FontFamily(Font(R.font.poppins_bold, FontWeight.Bold)),
+                fontSize = 24.sp
             )
 
             // Name field
