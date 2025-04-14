@@ -432,6 +432,7 @@ object FirebaseManager {
     // Thêm phương thức để cập nhật số lượng sách
     suspend fun updateBookQuantity(bookId: String, increment: Int): Boolean {
         return try {
+            // Lấy thông tin sách hiện tại
             val bookDoc = db.collection(BOOKS_COLLECTION)
                 .document(bookId)
                 .get()
@@ -442,29 +443,75 @@ object FirebaseManager {
                 val currentQuantity = (bookData["quantity"] as? Long)?.toInt() ?: 0
                 val newQuantity = maxOf(0, currentQuantity + increment)
                 
-                // Chỉ cập nhật trạng thái khi số lượng về 0
-                val updateData = if (newQuantity == 0) {
-                    mapOf(
-                        "quantity" to newQuantity,
-                        "status" to "Không có sẵn"
-                    ) as Map<String, Any>
-                } else {
-                    mapOf(
-                        "quantity" to newQuantity
-                    ) as Map<String, Any>
-                }
+                Log.d("FirebaseManager", "Cập nhật số lượng sách: Hiện tại=$currentQuantity, Mới=$newQuantity")
+                
+                // Cập nhật trạng thái dựa trên số lượng sách
+                val newStatus = if (newQuantity > 0) "Có sẵn" else "Không có sẵn"
+                
+                val updateData = mapOf(
+                    "quantity" to newQuantity,
+                    "status" to newStatus,
+                    "availableCopies" to newQuantity.toString()
+                )
+                
+                Log.d("FirebaseManager", "Dữ liệu cập nhật: $updateData")
+                
+                // Sử dụng set với merge để cập nhật toàn bộ thông tin
+                db.collection(BOOKS_COLLECTION)
+                    .document(bookId)
+                    .set(updateData, SetOptions.merge())
+                    .await()
+                
+                // Kiểm tra sau khi cập nhật
+                val updatedDoc = db.collection(BOOKS_COLLECTION)
+                    .document(bookId)
+                    .get()
+                    .await()
+                
+                Log.d("FirebaseManager", "Dữ liệu sau khi cập nhật: ${updatedDoc.data}")
+                
+                true
+            } else {
+                Log.e("FirebaseManager", "Không tìm thấy sách với id: $bookId")
+                false
+            }
+        } catch (e: Exception) {
+            Log.e("FirebaseManager", "Lỗi khi cập nhật số lượng sách: ${e.message}")
+            e.printStackTrace()
+            false
+        }
+    }
+
+    // Thêm hàm mới để cập nhật trạng thái sách
+    suspend fun updateBookStatus(bookId: String): Boolean {
+        return try {
+            val bookDoc = db.collection(BOOKS_COLLECTION)
+                .document(bookId)
+                .get()
+                .await()
+
+            val bookData = bookDoc.data
+            if (bookData != null) {
+                val quantity = (bookData["quantity"] as? Long)?.toInt() ?: 0
+                val newStatus = if (quantity > 0) "Có sẵn" else "Không có sẵn"
+                
+                val updateData = mapOf(
+                    "status" to newStatus,
+                    "availableCopies" to quantity.toString()
+                )
                 
                 db.collection(BOOKS_COLLECTION)
                     .document(bookId)
-                    .update(updateData)
+                    .set(updateData, SetOptions.merge())
                     .await()
                 
+                Log.d("FirebaseManager", "Đã cập nhật trạng thái sách: $bookId thành $newStatus")
                 true
             } else {
                 false
             }
         } catch (e: Exception) {
-            Log.e("FirebaseManager", "Lỗi khi cập nhật số lượng sách: ${e.message}")
+            Log.e("FirebaseManager", "Lỗi khi cập nhật trạng thái sách: ${e.message}")
             false
         }
     }
@@ -674,7 +721,7 @@ object FirebaseManager {
 
     suspend fun returnBook(userId: String, book: Map<String, Any>) {
         try {
-            Log.d("FirebaseManager", "Bắt đầu trả sách cho user: $userId")
+            Log.d("FirebaseManager", "Bắt đầu gửi yêu cầu trả sách cho user: $userId")
             val bookId = book["bookId"] as? String ?: return
             val bookTitle = book["bookTitle"] as? String ?: ""
             
@@ -693,26 +740,22 @@ object FirebaseManager {
                 return
             }
 
-            // Cập nhật trạng thái sách thành "Chờ duyệt trả"
+            // Chỉ cập nhật trạng thái trong collection borrows thành "Chờ duyệt trả"
             for (document in querySnapshot.documents) {
-                try {
-                    val updateData = mapOf(
-                        "status" to "Chờ duyệt trả",
-                        "returnRequestDate" to Timestamp(Date())
+                db.collection(BORROWS_COLLECTION)
+                    .document(document.id)
+                    .update(
+                        mapOf(
+                            "status" to "Chờ duyệt trả",
+                            "returnRequestDate" to Timestamp(Date())
+                        )
                     )
-                    
-                    Log.d("FirebaseManager", "Cập nhật document ${document.id} với dữ liệu: $updateData")
-                    
-                    document.reference.update(updateData).await()
-                    
-                    Log.d("FirebaseManager", "Đã cập nhật trạng thái sách thành công")
-                } catch (e: Exception) {
-                    Log.e("FirebaseManager", "Lỗi khi cập nhật document ${document.id}: ${e.message}")
-                    throw e
-                }
+                    .await()
             }
+
+            Log.d("FirebaseManager", "Đã gửi yêu cầu trả sách thành công")
         } catch (e: Exception) {
-            Log.e("FirebaseManager", "Lỗi khi trả sách: ${e.message}")
+            Log.e("FirebaseManager", "Lỗi khi gửi yêu cầu trả sách: ${e.message}")
             Log.e("FirebaseManager", "Stack trace: ${e.stackTraceToString()}")
             throw e
         }
@@ -743,6 +786,19 @@ object FirebaseManager {
             // Kiểm tra xem người dùng đã mượn sách này chưa
             val bookId = book["id"] as? String ?: ""
             val bookTitle = book["title"] as? String ?: ""
+            
+            // Kiểm tra số lượng sách có sẵn
+            val bookDoc = db.collection(BOOKS_COLLECTION)
+                .document(bookId)
+                .get()
+                .await()
+            
+            val quantity = (bookDoc.data?.get("quantity") as? Long)?.toInt() ?: 0
+            val status = bookDoc.data?.get("status") as? String
+            
+            if (quantity <= 0 || status != "Có sẵn") {
+                throw Exception("Sách hiện không có sẵn để mượn!")
+            }
             
             if (hasUserBorrowedBook(userId, bookId)) {
                 throw Exception("Bạn đã mượn sách này và chưa trả!")
@@ -1094,6 +1150,8 @@ object FirebaseManager {
     // Thêm hàm để duyệt yêu cầu trả sách
     suspend fun approveReturnRequest(borrowId: String): Boolean {
         return try {
+            Log.d("FirebaseManager", "Bắt đầu duyệt yêu cầu trả sách: $borrowId")
+            
             // Lấy thông tin mượn sách
             val borrowDoc = db.collection(BORROWS_COLLECTION)
                 .document(borrowId)
@@ -1104,29 +1162,57 @@ object FirebaseManager {
             if (borrowData != null) {
                 val bookId = borrowData["bookId"] as? String
                 
-                // Cập nhật số lượng sách (tăng 1)
                 if (bookId != null) {
-                    updateBookQuantity(bookId, 1)
-                }
-
-                // Cập nhật trạng thái trong collection borrows
-                db.collection(BORROWS_COLLECTION)
-                    .document(borrowId)
-                    .update(
-                        mapOf(
-                            "status" to "Đã trả",
-                            "returnDate" to Timestamp(Date())
-                        )
+                    Log.d("FirebaseManager", "Cập nhật thông tin sách: $bookId")
+                    
+                    // Lấy thông tin sách hiện tại
+                    val bookDoc = db.collection(BOOKS_COLLECTION)
+                        .document(bookId)
+                        .get()
+                        .await()
+                    
+                    val currentQuantity = (bookDoc.data?.get("quantity") as? Long)?.toInt() ?: 0
+                    val newQuantity = currentQuantity + 1
+                    
+                    Log.d("FirebaseManager", "Số lượng sách - Hiện tại: $currentQuantity, Mới: $newQuantity")
+                    
+                    // Cập nhật thông tin sách
+                    val bookUpdateData = mapOf(
+                        "quantity" to newQuantity,
+                        "status" to "Có sẵn",
+                        "availableCopies" to newQuantity.toString()
                     )
-                    .await()
-
-                Log.d("FirebaseManager", "Đã duyệt yêu cầu trả sách thành công")
-                true
+                    
+                    // Cập nhật toàn bộ thông tin sách
+                    db.collection(BOOKS_COLLECTION)
+                        .document(bookId)
+                        .update(bookUpdateData)
+                        .await()
+                    
+                    // Cập nhật trạng thái mượn sách
+                    val borrowUpdateData = mapOf(
+                        "status" to "Đã trả",
+                        "returnDate" to Timestamp(Date())
+                    )
+                    
+                    db.collection(BORROWS_COLLECTION)
+                        .document(borrowId)
+                        .update(borrowUpdateData)
+                        .await()
+                    
+                    Log.d("FirebaseManager", "Đã duyệt yêu cầu trả sách thành công")
+                    true
+                } else {
+                    Log.e("FirebaseManager", "Không tìm thấy bookId trong thông tin mượn sách")
+                    false
+                }
             } else {
+                Log.e("FirebaseManager", "Không tìm thấy thông tin mượn sách")
                 false
             }
         } catch (e: Exception) {
             Log.e("FirebaseManager", "Lỗi khi duyệt yêu cầu trả sách: ${e.message}")
+            e.printStackTrace()
             false
         }
     }
