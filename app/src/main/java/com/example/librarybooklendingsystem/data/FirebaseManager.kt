@@ -440,13 +440,19 @@ object FirebaseManager {
             val bookData = bookDoc.data
             if (bookData != null) {
                 val currentQuantity = (bookData["quantity"] as? Long)?.toInt() ?: 0
-                val newQuantity = maxOf(0, currentQuantity + increment) // Đảm bảo số lượng không âm
+                val newQuantity = maxOf(0, currentQuantity + increment)
                 
-                // Cập nhật số lượng và trạng thái sách
-                val updateData = mapOf(
-                    "quantity" to newQuantity,
-                    "status" to if (newQuantity > 0) BookStatus.AVAILABLE else "Không có sẵn"
-                ) as Map<String, Any>
+                // Chỉ cập nhật trạng thái khi số lượng về 0
+                val updateData = if (newQuantity == 0) {
+                    mapOf(
+                        "quantity" to newQuantity,
+                        "status" to "Không có sẵn"
+                    ) as Map<String, Any>
+                } else {
+                    mapOf(
+                        "quantity" to newQuantity
+                    ) as Map<String, Any>
+                }
                 
                 db.collection(BOOKS_COLLECTION)
                     .document(bookId)
@@ -492,6 +498,7 @@ object FirebaseManager {
                     updateBookQuantity(bookId, -1)
                 }
 
+                // Cập nhật trạng thái trong collection borrows
                 db.collection(BORROWS_COLLECTION)
                     .document(borrowId)
                     .update(
@@ -1102,7 +1109,7 @@ object FirebaseManager {
                     updateBookQuantity(bookId, 1)
                 }
 
-                // Cập nhật trạng thái thành "Đã trả"
+                // Cập nhật trạng thái trong collection borrows
                 db.collection(BORROWS_COLLECTION)
                     .document(borrowId)
                     .update(
