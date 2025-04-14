@@ -429,6 +429,40 @@ object FirebaseManager {
         }
     }
 
+    // Thêm phương thức để cập nhật số lượng sách
+    suspend fun updateBookQuantity(bookId: String, increment: Int): Boolean {
+        return try {
+            val bookDoc = db.collection(BOOKS_COLLECTION)
+                .document(bookId)
+                .get()
+                .await()
+
+            val bookData = bookDoc.data
+            if (bookData != null) {
+                val currentQuantity = (bookData["quantity"] as? Long)?.toInt() ?: 0
+                val newQuantity = maxOf(0, currentQuantity + increment) // Đảm bảo số lượng không âm
+                
+                // Cập nhật số lượng và trạng thái sách
+                val updateData = mapOf(
+                    "quantity" to newQuantity,
+                    "status" to if (newQuantity > 0) BookStatus.AVAILABLE else "Không có sẵn"
+                ) as Map<String, Any>
+                
+                db.collection(BOOKS_COLLECTION)
+                    .document(bookId)
+                    .update(updateData)
+                    .await()
+                
+                true
+            } else {
+                false
+            }
+        } catch (e: Exception) {
+            Log.e("FirebaseManager", "Lỗi khi cập nhật số lượng sách: ${e.message}")
+            false
+        }
+    }
+
     suspend fun approveBorrowRequest(borrowId: String) {
         try {
             // Lấy thông tin yêu cầu mượn sách
@@ -439,6 +473,7 @@ object FirebaseManager {
 
             val borrowData = borrowDoc.data
             if (borrowData != null) {
+                val bookId = borrowData["bookId"] as? String
                 val expectedReturnDate = borrowData["expectedReturnDate"] as? String
                 
                 // Cập nhật trạng thái yêu cầu mượn sách
@@ -450,6 +485,11 @@ object FirebaseManager {
                     val calendar = Calendar.getInstance()
                     calendar.add(Calendar.DAY_OF_MONTH, 100)
                     calendar.time
+                }
+
+                // Cập nhật số lượng sách (giảm 1)
+                if (bookId != null) {
+                    updateBookQuantity(bookId, -1)
                 }
 
                 db.collection(BORROWS_COLLECTION)
@@ -1055,6 +1095,13 @@ object FirebaseManager {
 
             val borrowData = borrowDoc.data
             if (borrowData != null) {
+                val bookId = borrowData["bookId"] as? String
+                
+                // Cập nhật số lượng sách (tăng 1)
+                if (bookId != null) {
+                    updateBookQuantity(bookId, 1)
+                }
+
                 // Cập nhật trạng thái thành "Đã trả"
                 db.collection(BORROWS_COLLECTION)
                     .document(borrowId)
