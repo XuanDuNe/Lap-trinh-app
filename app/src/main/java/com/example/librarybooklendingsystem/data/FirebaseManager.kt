@@ -1186,7 +1186,7 @@ object FirebaseManager {
                     // Cập nhật toàn bộ thông tin sách
                     db.collection(BOOKS_COLLECTION)
                         .document(bookId)
-                        .update(bookUpdateData)
+                        .set(bookUpdateData, SetOptions.merge())
                         .await()
                     
                     // Cập nhật trạng thái mượn sách
@@ -1197,7 +1197,7 @@ object FirebaseManager {
                     
                     db.collection(BORROWS_COLLECTION)
                         .document(borrowId)
-                        .update(borrowUpdateData)
+                        .set(borrowUpdateData, SetOptions.merge())
                         .await()
                     
                     Log.d("FirebaseManager", "Đã duyệt yêu cầu trả sách thành công")
