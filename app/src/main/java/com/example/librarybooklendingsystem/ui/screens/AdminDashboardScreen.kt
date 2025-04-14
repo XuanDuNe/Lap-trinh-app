@@ -38,12 +38,12 @@ import com.example.librarybooklendingsystem.data.AuthState
 @Composable
 fun AdminDashboardScreen(navController: NavController) {
     val statistics = listOf(
-        Triple("Thống kê mượn sách", "borrowed_books_stats", R.drawable.ic),
-        Triple("Thống kê người dùng", "user_stats", R.drawable.ic),
-        Triple("Thống kê trả sách", "returned_books_stats", R.drawable.ic),
         Triple("Thống kê sách trong thư viện", "library_stats", R.drawable.ic),
+        Triple("Thống kê người dùng", "user_stats", R.drawable.ic),
         Triple("Thống kê sách cần duyệt mượn", "pending_books_approval", R.drawable.ic),
-        Triple("Thống kê sách cần duyệt trả", "pending_books_return", R.drawable.ic)
+        Triple("Thống kê sách cần duyệt trả", "pending_books_return", R.drawable.ic),
+        Triple("Thống kê mượn sách", "borrowed_books_stats", R.drawable.ic),
+        Triple("Thống kê trả sách", "returned_books_stats", R.drawable.ic)
     )
 
     LazyColumn(

@@ -164,11 +164,6 @@ fun ReturnedBooksStatsScreen(navController: NavController) {
                                         fontSize = 14.sp,
                                         color = Color.Gray
                                     )
-                                    Text(
-                                        text = "Ngày trả: ${detail.returnDate?.let { dateFormat.format(it) } ?: "Không có thông tin"}",
-                                        fontSize = 14.sp,
-                                        color = Color.Gray
-                                    )
                                 }
                                 Divider()
                             }

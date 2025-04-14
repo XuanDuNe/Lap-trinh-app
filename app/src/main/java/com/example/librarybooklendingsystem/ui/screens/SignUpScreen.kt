@@ -77,7 +77,7 @@ fun SignUpScreen(navController: NavController) {
             Text(
                 text = "Create your new account now",
                 textAlign = TextAlign.Center,
-                fontFamily = FontFamily(Font(R.font.poppins_bold, FontWeight.Bold)),
+                fontFamily = FontFamily(Font(R.font.nunito_bold, FontWeight.Bold)),
                 fontSize = 24.sp
             )
 

@@ -54,7 +54,7 @@ fun PendingBooksReturnScreen(
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
-                            text = "Thống kê sách cần duyệt trả",
+                            text = "Sách cần duyệt trả",
                             fontSize = 26.sp,
                             fontWeight = FontWeight.Bold,
                             color = Color.White,

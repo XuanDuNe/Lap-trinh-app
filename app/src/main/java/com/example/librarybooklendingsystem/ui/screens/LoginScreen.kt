@@ -62,14 +62,14 @@ fun LoginScreen(navController: NavController) {
             text = "Login",
             style = MaterialTheme.typography.headlineLarge,
             modifier = Modifier.padding(bottom = 8.dp),
-            fontFamily = FontFamily(Font(R.font.poppins_bold, FontWeight.Bold))
+            fontFamily = FontFamily(Font(R.font.nunito_bold, FontWeight.Bold))
         )
 
         Text(
             text = "Welcome back!",
             style = MaterialTheme.typography.bodyLarge,
             modifier = Modifier.padding(bottom = 32.dp),
-            fontFamily = FontFamily(Font(R.font.poppins_bold, FontWeight.Bold))
+            fontFamily = FontFamily(Font(R.font.nunito_bold, FontWeight.Bold))
         )
 
         OutlinedTextField(
@@ -176,7 +176,7 @@ fun LoginScreen(navController: NavController) {
                 Text(
                     "Sign In",
                     style = MaterialTheme.typography.bodyLarge,
-                    fontFamily = FontFamily(Font(R.font.poppins_bold, FontWeight.Bold)),
+                    fontFamily = FontFamily(Font(R.font.nunito_bold, FontWeight.Bold)),
                     color = Color.White
                 )
             }
