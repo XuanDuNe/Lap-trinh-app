@@ -229,17 +229,6 @@ private fun MainContent(
                     AccountScreen(navController) 
                 }
             }
-            
-            composable("settings") { 
-                if (!isLoggedIn) {
-                    LaunchedEffect(Unit) {
-                        navController.navigate("login")
-                    }
-                } else {
-                    SettingsScreen(navController)
-                }
-            }
-
             // Màn hình admin
             composable("admin_dashboard") {
                 if (!isLoggedIn) {

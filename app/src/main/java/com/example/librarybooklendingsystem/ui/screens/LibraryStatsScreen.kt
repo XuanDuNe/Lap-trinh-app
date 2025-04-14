@@ -63,7 +63,7 @@ fun LibraryStatsScreen(navController: NavController) {
                 modifier = Modifier.height(80.dp),
                 title = {
                     Text(
-                        text = "Thống kê sách trong thư viện",
+                        text = "Sách có trong thư viện",
                         fontSize = 24.sp,
                         fontWeight = FontWeight.Bold,
                         color = Color.White,

@@ -102,23 +102,6 @@ fun MainDrawer(
             }
         }
 
-        Divider()
-
-        // Library section
-        DrawerMenuItem(
-            icon = Icons.Default.Home,
-            text = "Thư viện",
-            selected = selectedCategory == null,
-            onClick = {
-                categoryViewModel.clearSelectedCategory()
-                navController.navigate("home") {
-                    popUpTo(navController.graph.startDestinationId)
-                    launchSingleTop = true
-                }
-                onCloseDrawer()
-            }
-        )
-
         Divider(modifier = Modifier.padding(vertical = 8.dp))
 
         // Book Categories Section
@@ -152,35 +135,6 @@ fun MainDrawer(
                 .weight(1f)
                 .padding(bottom = 16.dp)
         )
-
-        // Login/Logout section
-        if (isLoggedIn) {
-            NavigationDrawerItem(
-                icon = { Icon(Icons.Default.ExitToApp, contentDescription = "Đăng xuất") },
-                label = { Text("Đăng xuất") },
-                selected = false,
-                onClick = {
-                    FirebaseManager.signOut()
-                    categoryViewModel.clearSelectedCategory()
-                    navController.navigate("home") {
-                        popUpTo(0) { inclusive = true }
-                    }
-                    onCloseDrawer()
-                },
-                modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
-            )
-        } else {
-            NavigationDrawerItem(
-                icon = { Icon(Icons.Default.AccountCircle, contentDescription = "Đăng nhập") },
-                label = { Text("Đăng nhập") },
-                selected = false,
-                onClick = {
-                    navController.navigate("login")
-                    onCloseDrawer()
-                },
-                modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
-            )
-        }
     }
 }
 

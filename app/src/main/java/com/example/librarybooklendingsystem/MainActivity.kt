@@ -186,15 +186,7 @@ fun MainScreen() {
                         categoryViewModel = categoryViewModel
                     )
                 }
-                
-                composable("library") { LibraryScreen(navController) }
-                composable("my_library") { MyLibraryScreen(navController) }
-                composable("members") { MembersScreen(navController) }
-                composable("supplies") { SuppliesScreen(navController) }
-                composable("upgrade") { UpgradeScreen(navController) }
-                composable("settings") { SettingsScreen(navController) }
-                composable("trash") { TrashScreen(navController) }
-                
+
                 composable(
                     route = "bookDetails/{bookId}",
                     arguments = listOf(
