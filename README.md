@@ -2,9 +2,9 @@
 
 ## 👨‍💻 Nhóm Thực Hiện
 
-- **[Nguyễn Xuân Dự]** – Leader, Thiết kế UI bằng Jetpack Compose,,xử lý logic duyệt
-- **[Nguyễn Văn Duy]** – Thiết kế UI bằng Jetpack Compose,Tạo Firestore structure + xác thực người dùngt,Tối ưu giao diện + UI/UX testing, 
-- **[Phạm Công Trứ]**  – Tạo màn hình yêu cầu mượn & xử lý logic duyệt
+- **[Nguyễn Xuân Dự]-MSSV: [2251120074]** – Leader, Thiết kế UI bằng Jetpack Compose,,xử lý logic duyệt
+- **[Nguyễn Văn Duy]-MSSV: [2251120072]** – Thiết kế UI bằng Jetpack Compose,Tạo Firestore structure + xác thực người dùngt,Tối ưu giao diện + UI/UX testing, 
+- **[Phạm Công Trứ]-MSSV: [2251120124]**  – Tạo màn hình yêu cầu mượn & xử lý logic duyệt
 
 
 > 📌 *Tổng cộng: 3 thành viên, chia việc theo mô hình Scrum.*
