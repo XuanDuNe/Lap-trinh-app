@@ -2,14 +2,12 @@
 
 ## 👨‍💻 Nhóm Thực Hiện
 
-- **Nguyễn Xuân Dự** – Leader, chính sửa backend Firebase
-- **[Tên Thành Viên 2]** – Thiết kế UI bằng Jetpack Compose
-- **[Tên Thành Viên 3]** – Tạo Firestore structure + xác thực người dùng
-- **[Tên Thành Viên 4]** – Tạo màn hình yêu cầu mượn & xử lý logic duyệt
-- **[Tên Thành Viên 5]** – Tạo mã QR và chức năng quét để nhận sách
-- **[Tên Thành Viên 6]** – Tối ưu giao diện + UI/UX testing
+- **[Nguyễn Xuân Dự]** – Leader, Thiết kế UI bằng Jetpack Compose,,xử lý logic duyệt
+- **[Nguyễn Văn Duy]** – Thiết kế UI bằng Jetpack Compose,Tạo Firestore structure + xác thực người dùngt,Tối ưu giao diện + UI/UX testing, 
+- **[Phạm Công Trứ]**  – Tạo màn hình yêu cầu mượn & xử lý logic duyệt
 
-> 📌 *Tổng cộng: 6 thành viên, chia việc theo mô hình Scrum.*
+
+> 📌 *Tổng cộng: 3 thành viên, chia việc theo mô hình Scrum.*
 
 ---
 
@@ -19,8 +17,8 @@
 
 1. **Người dùng gửi yêu cầu mượn sách** từ app.
 2. **Admin kiểm tra và phê duyệt** nếu sách còn.
-3. Người dùng **nhận mã mượn (QR)** trong app.
-4. Khi đến thư viện, **thủ thư quét mã và xác nhận** để giao sách.
+3. Người dùng **nhận mã mượn sách** trong app.
+4. Khi đến thư viện, **đọc mã mượn sách và xác nhận** để giao sách.
 
 ---
 
@@ -30,7 +28,7 @@
 - **UI:** Jetpack Compose + Material Design 3
 - **Kiến trúc:** MVVM (Model - View - ViewModel)
 - **Backend:** Firebase Firestore + Firebase Authentication
-- **Tính năng thêm:** Quét QR Code, quản lý trạng thái mượn sách
+- **Tính năng thêm:** Quản lý trạng thái mượn sách
 
 ---
 
@@ -55,12 +53,12 @@
 > Dùng thử với các tài khoản Firebase demo:
 
 - Người dùng:
-  - Email: `user1@gmail.com`
-  - Mật khẩu: `123456`
+  - Email: `nxd04012004@gmail.com`
+  - Mật khẩu: `1234567`
 
 - Admin:
-  - Email: `admin1@gmail.com`
-  - Mật khẩu: `admin123`
+  - Email: `nguyenxuandu0401@gmail.com`
+  - Mật khẩu: `1234567`
 
 *(Bạn cũng có thể đăng ký tài khoản mới ngay trong app.)*
 
@@ -72,21 +70,21 @@
 2. **Chọn sách cần mượn**
 3. **Gửi yêu cầu mượn**
 4. **Chờ admin duyệt**
-5. **Xem mã QR**
-6. **Đến thư viện – quét mã nhận sách**
+5. **Đến thư viện – đọc mã mượn để nhận sách**
+
 
 ---
 
 ## 📸 Hình Ảnh Demo (Tuỳ chọn thêm sau)
 
-> Chèn ảnh app tại đây nếu có: màn hình chính, duyệt sách, mã QR...
+
 
 ---
 
 ## 📩 Liên Hệ Nhóm
 
-- Liên hệ: [email của nhóm hoặc trưởng nhóm]
-- Facebook: [link Facebook nếu muốn]
+- Liên hệ: [2251120074@ut.edu.vn]
+- Facebook: [https://www.facebook.com/du.nguyenxuan.5680]
 
 ---
 
