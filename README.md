@@ -78,7 +78,6 @@
 ## 📸 Hình Ảnh Demo 
 
 <img src="https://github.com/user-attachments/assets/274b39e3-24f1-4969-a2b4-32d18c495708" width="300"/>
-<img src="https://github.com/user-attachments/assets/c7b9dbed-8b2c-4793-a8ea-35a6d67aedb8" width="300"/>
 <img src="https://github.com/user-attachments/assets/55a2ac3f-245c-4508-a648-19754ce3b0f8" width="300"/>
 <img src="https://github.com/user-attachments/assets/7a7583a6-2ea9-4f3a-8c5b-36d0b93f5ea0" width="300"/>
 
