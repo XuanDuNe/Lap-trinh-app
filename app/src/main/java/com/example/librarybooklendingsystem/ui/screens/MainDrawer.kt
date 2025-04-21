@@ -48,6 +48,13 @@ fun MainDrawer(
     var userName by remember { mutableStateOf("") }
     val scope = rememberCoroutineScope()
 
+    LaunchedEffect(isLoggedIn) {
+        if (!isLoggedIn) {
+            userName = "Người dùng"
+            categoryViewModel.clearSelectedCategory()
+        }
+    }
+
     LaunchedEffect(currentUser) {
         if (currentUser != null) {
             scope.launch {
@@ -134,6 +141,31 @@ fun MainDrawer(
             modifier = Modifier
                 .weight(1f)
                 .padding(bottom = 16.dp)
+        )
+
+        // Login/Logout section
+        DrawerMenuItem(
+            icon = if (isLoggedIn) Icons.Default.ExitToApp else Icons.Default.AccountCircle,
+            text = if (isLoggedIn) "Đăng xuất" else "Đăng nhập",
+            onClick = {
+                if (isLoggedIn) {
+                    Log.d("MainDrawer", "Logout clicked")
+                    try {
+                        AuthState.signOut()
+                        categoryViewModel.clearSelectedCategory()
+                        userName = "Người dùng"
+                        navController.navigate("home") {
+                            popUpTo(0) { inclusive = true }
+                        }
+                        onCloseDrawer()
+                    } catch (e: Exception) {
+                        Log.e("MainDrawer", "Error during logout: ${e.message}")
+                    }
+                } else {
+                    navController.navigate("login")
+                    onCloseDrawer()
+                }
+            }
         )
     }
 }

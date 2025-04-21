@@ -183,14 +183,8 @@ private fun MainContent(
                     navArgument("bookId") { type = NavType.StringType }
                 )
             ) { backStackEntry ->
-                if (!isLoggedIn) {
-                    LaunchedEffect(Unit) {
-                        navController.navigate("login")
-                    }
-                } else {
-                    val bookId = backStackEntry.arguments?.getString("bookId") ?: ""
-                    BookDetailsScreen(navController = navController, bookId = bookId)
-                }
+                val bookId = backStackEntry.arguments?.getString("bookId") ?: ""
+                BookDetailsScreen(navController = navController, bookId = bookId)
             }
 
             composable(

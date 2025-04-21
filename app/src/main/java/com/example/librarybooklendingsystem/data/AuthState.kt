@@ -30,6 +30,21 @@ object AuthState {
     private val _currentUser = MutableStateFlow<FirebaseUser?>(auth.currentUser)
     val currentUser: StateFlow<FirebaseUser?> = _currentUser.asStateFlow()
 
+    init {
+        // Thêm listener cho FirebaseAuth để cập nhật trạng thái ngay lập tức
+        auth.addAuthStateListener { firebaseAuth ->
+            val user = firebaseAuth.currentUser
+            _currentUser.value = user
+            _isLoggedIn.value = user != null
+            if (user == null) {
+                _currentUserRole.value = null
+                _isAdmin.value = false
+                _currentUserShortId.value = null
+                saveAuthState(false, null, null)
+            }
+        }
+    }
+
     val currentUserId: String?
         get() = auth.currentUser?.uid
 

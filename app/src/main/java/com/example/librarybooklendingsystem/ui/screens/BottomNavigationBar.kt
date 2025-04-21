@@ -14,6 +14,7 @@ import androidx.navigation.NavGraph.Companion.findStartDestination
 import com.example.librarybooklendingsystem.data.AuthState
 import com.example.librarybooklendingsystem.ui.viewmodels.CategoryViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
 @Composable
 fun BottomNavigationBar(
@@ -24,28 +25,14 @@ fun BottomNavigationBar(
     var selectedItem by remember { mutableStateOf(0) }
     var showLoginDialog by remember { mutableStateOf(false) }
     
-    val isAdmin = produceState(initialValue = false) {
-        AuthState.isAdmin.collect { 
-            value = it
-        }
-    }
-    
-    val userRole = produceState<String?>(initialValue = null) {
-        AuthState.currentUserRole.collect { 
-            value = it
-        }
-    }
-
-    val isLoggedIn = produceState(initialValue = false) {
-        AuthState.isLoggedIn.collect {
-            value = it
-        }
-    }
+    val isAdmin by AuthState.isAdmin.collectAsStateWithLifecycle()
+    val userRole by AuthState.currentUserRole.collectAsStateWithLifecycle()
+    val isLoggedIn by AuthState.isLoggedIn.collectAsStateWithLifecycle()
 
     val items = listOfNotNull(
         BottomNavItem("Trang chủ", Icons.Default.Home, "home"),
         BottomNavItem("Danh mục", Icons.Default.List, "drawer"),
-        if (isAdmin.value) BottomNavItem("Thống kê", Icons.Default.Settings, "admin_dashboard") else null,
+        if (isAdmin) BottomNavItem("Thống kê", Icons.Default.Settings, "admin_dashboard") else null,
         BottomNavItem("Cá nhân", Icons.Default.Person, "account")
     ).filterNotNull()
 
@@ -75,13 +62,13 @@ fun BottomNavigationBar(
                             }
                         }
                         "admin_dashboard" -> {
-                            if (isAdmin.value) {
+                            if (isAdmin) {
                                 selectedItem = index
                                 navigateToTab(navController, item.route)
                             }
                         }
                         "account" -> {
-                            if (isLoggedIn.value) {
+                            if (isLoggedIn) {
                                 selectedItem = index
                                 navigateToTab(navController, item.route)
                             } else {

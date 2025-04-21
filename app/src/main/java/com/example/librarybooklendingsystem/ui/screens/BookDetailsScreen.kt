@@ -27,17 +27,46 @@ import com.example.librarybooklendingsystem.data.FirebaseManager
 import com.example.librarybooklendingsystem.ui.components.CommonHeader
 import kotlinx.coroutines.launch
 import androidx.compose.ui.text.font.FontStyle
+import com.example.librarybooklendingsystem.data.AuthState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BookDetailsScreen(navController: NavController, bookId: String) {
     var book by remember { mutableStateOf<Book?>(null) }
     val scope = rememberCoroutineScope()
+    val isLoggedIn by AuthState.isLoggedIn.collectAsStateWithLifecycle()
+    var showLoginDialog by remember { mutableStateOf(false) }
 
     LaunchedEffect(bookId) {
         scope.launch {
             book = FirebaseManager.getBookById(bookId)
         }
+    }
+
+    if (showLoginDialog) {
+        AlertDialog(
+            onDismissRequest = { showLoginDialog = false },
+            title = { Text("Yêu cầu đăng nhập") },
+            text = { Text("Bạn cần đăng nhập để mượn sách. Bạn có muốn đăng nhập ngay bây giờ không?") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showLoginDialog = false
+                        navController.navigate("login")
+                    }
+                ) {
+                    Text("Đăng nhập")
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = { showLoginDialog = false }
+                ) {
+                    Text("Hủy")
+                }
+            }
+        )
     }
 
     Scaffold(
@@ -118,7 +147,11 @@ fun BookDetailsScreen(navController: NavController, bookId: String) {
                     Spacer(modifier = Modifier.height(16.dp))
                     Button(
                         onClick = { 
-                            navController.navigate("borrowBook/${book?.id}")
+                            if (isLoggedIn) {
+                                navController.navigate("borrowBook/${book?.id}")
+                            } else {
+                                showLoginDialog = true
+                            }
                         },
                         modifier = Modifier
                             .fillMaxWidth()

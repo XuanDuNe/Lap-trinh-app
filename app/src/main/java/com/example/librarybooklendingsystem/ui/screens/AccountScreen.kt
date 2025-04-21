@@ -40,6 +40,9 @@ import com.example.librarybooklendingsystem.ui.components.CommonHeader
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.*
+import com.example.librarybooklendingsystem.data.AuthState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -50,8 +53,8 @@ fun AccountScreen(navController: NavController) {
     var userName by remember { mutableStateOf("") }
     var numericId by remember { mutableStateOf("") }
     val scope = rememberCoroutineScope()
-    val auth = FirebaseAuth.getInstance()
-    val currentUser = auth.currentUser
+    val isLoggedIn by AuthState.isLoggedIn.collectAsStateWithLifecycle()
+    val currentUser by AuthState.currentUser.collectAsStateWithLifecycle()
     var showReturnDialog by remember { mutableStateOf(false) }
     var selectedBook by remember { mutableStateOf<Map<String, Any>?>(null) }
 
@@ -116,15 +119,20 @@ fun AccountScreen(navController: NavController) {
         // Không làm gì khi nhấn nút back
     }
 
-    LaunchedEffect(currentUser) {
-        if (currentUser == null) {
-            navController.navigate("login") {
+    LaunchedEffect(isLoggedIn) {
+        if (!isLoggedIn) {
+            navController.navigate("home") {
                 popUpTo(0) { inclusive = true }
             }
-        } else {
+        }
+    }
+
+    LaunchedEffect(currentUser) {
+        val user = currentUser
+        if (user != null) {
             scope.launch {
                 try {
-                    val userInfo = FirebaseManager.getUserInfo(currentUser.uid)
+                    val userInfo = FirebaseManager.getUserInfo(user.uid)
                     userName = userInfo?.get("name") as? String ?: "Người dùng"
 
                     // Tạo ID số ngẫu nhiên 6 chữ số
@@ -135,7 +143,7 @@ fun AccountScreen(navController: NavController) {
                     Log.d("AccountScreen", "Tên người dùng: $userName")
                     Log.d("AccountScreen", "Numeric ID: $numericId")
 
-                    val books = FirebaseManager.getUserBorrowedBooks(currentUser.uid)
+                    val books = FirebaseManager.getUserBorrowedBooks(user.uid)
                     if (books != null) {
                         borrowedBooks = books
                     }
@@ -148,7 +156,7 @@ fun AccountScreen(navController: NavController) {
         }
     }
 
-    if (currentUser == null) {
+    if (!isLoggedIn || currentUser == null) {
         return
     }
 
@@ -203,8 +211,8 @@ fun AccountScreen(navController: NavController) {
 
             Button(
                 onClick = {
-                    auth.signOut()
-                    navController.navigate("login") {
+                    AuthState.signOut()
+                    navController.navigate("home") {
                         popUpTo(0) { inclusive = true }
                     }
                 },
