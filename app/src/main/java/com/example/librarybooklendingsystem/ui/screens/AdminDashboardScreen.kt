@@ -1,5 +1,6 @@
 package com.example.librarybooklendingsystem.ui.screens
 
+import android.content.Context
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -24,6 +25,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -37,6 +39,7 @@ import com.example.librarybooklendingsystem.data.AuthState
 
 @Composable
 fun AdminDashboardScreen(navController: NavController) {
+    val context = LocalContext.current
     val statistics = listOf(
         Triple("Thống kê sách trong thư viện", "library_stats", R.drawable.ic),
         Triple("Thống kê người dùng", "user_stats", R.drawable.ic),
@@ -95,9 +98,8 @@ fun AdminDashboardScreen(navController: NavController) {
 
                     IconButton(
                         onClick = {
-                            AuthState.signOut()
-                            navController.navigate("login") {
-                                popUpTo(0) { inclusive = true }
+                            AuthState.signOut(context) {
+                                navController.navigate("login")
                             }
                         }
                     ) {

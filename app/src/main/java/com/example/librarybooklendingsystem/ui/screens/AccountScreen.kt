@@ -211,9 +211,10 @@ fun AccountScreen(navController: NavController) {
 
             Button(
                 onClick = {
-                    AuthState.signOut()
-                    navController.navigate("home") {
-                        popUpTo(0) { inclusive = true }
+                    AuthState.signOut(context) {
+                        navController.navigate("home") {
+                            popUpTo(0) { inclusive = true }
+                        }
                     }
                 },
                 modifier = Modifier

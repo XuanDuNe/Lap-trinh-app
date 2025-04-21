@@ -81,6 +81,53 @@ object AuthState {
         }
     }
 
+    fun getCurrentUser() = auth.currentUser
+
+    fun updateUserRole(onComplete: (Boolean) -> Unit = {}) {
+        _isLoading.value = true
+        val currentUser = auth.currentUser
+        if (currentUser != null) {
+            CoroutineScope(Dispatchers.IO).launch {
+                try {
+                    val document = db.collection("users").document(currentUser.uid).get().await()
+                    if (document.exists()) {
+                        val role = document.getString("role") ?: "user"
+                        val shortId = document.getString("short_id")
+                        _currentUserRole.value = role
+                        _isAdmin.value = role == "admin"
+                        _currentUserShortId.value = shortId
+                        saveAuthState(role == "admin", role, shortId)
+                        _isLoading.value = false
+                        withContext(Dispatchers.Main) {
+                            onComplete(true)
+                        }
+                    } else {
+                        _currentUserRole.value = "user"
+                        _isAdmin.value = false
+                        _currentUserShortId.value = null
+                        saveAuthState(false, "user", null)
+                        _isLoading.value = false
+                        withContext(Dispatchers.Main) {
+                            onComplete(false)
+                        }
+                    }
+                } catch (e: Exception) {
+                    _isLoading.value = false
+                    withContext(Dispatchers.Main) {
+                        onComplete(false)
+                    }
+                }
+            }
+        } else {
+            _currentUserRole.value = null
+            _isAdmin.value = false
+            _currentUserShortId.value = null
+            saveAuthState(false, null, null)
+            _isLoading.value = false
+            onComplete(false)
+        }
+    }
+
     fun signIn(email: String, password: String, context: Context, onSuccess: () -> Unit, onError: (String) -> Unit) {
         _isLoading.value = true
         auth.signInWithEmailAndPassword(email, password)
@@ -102,34 +149,92 @@ object AuthState {
                                     _isLoading.value = false
                                     onSuccess()
                                 } else {
-                                    _currentUserRole.value = "user"
-                                    _isAdmin.value = false
-                                    _currentUserShortId.value = null
-                                    _isLoggedIn.value = true
-                                    saveAuthState(false, "user", null)
-                                    _isLoading.value = false
-                                    onSuccess()
+                                    // Nếu document không tồn tại, tạo mới với role user
+                                    val userData = hashMapOf(
+                                        "role" to "user",
+                                        "email" to email,
+                                        "createdAt" to System.currentTimeMillis()
+                                    )
+                                    userRef.set(userData)
+                                        .addOnSuccessListener {
+                                            _currentUserRole.value = "user"
+                                            _isAdmin.value = false
+                                            _currentUserShortId.value = null
+                                            _isLoggedIn.value = true
+                                            saveAuthState(false, "user", null)
+                                            _isLoading.value = false
+                                            onSuccess()
+                                        }
+                                        .addOnFailureListener { e ->
+                                            _isLoading.value = false
+                                            onError("Lỗi khi tạo thông tin người dùng: ${e.message}")
+                                        }
                                 }
                             }
                             .addOnFailureListener { e ->
                                 _isLoading.value = false
-                                onError(e.message ?: "Failed to get user data")
+                                onError("Lỗi khi lấy thông tin người dùng: ${e.message}")
                             }
                     }
                 } else {
                     _isLoading.value = false
-                    onError(task.exception?.message ?: "Authentication failed")
+                    onError("Đăng nhập thất bại: ${task.exception?.message}")
                 }
             }
     }
 
-    fun signOut() {
-        auth.signOut()
-        _currentUserRole.value = null
-        _isAdmin.value = false
-        _currentUserShortId.value = null
-        _isLoggedIn.value = false
-        saveAuthState(false, null, null)
+    fun signOut(context: Context, onComplete: () -> Unit = {}) {
+        _isLoading.value = true
+        try {
+            auth.signOut()
+            _currentUserRole.value = null
+            _isAdmin.value = false
+            _currentUserShortId.value = null
+            _isLoggedIn.value = false
+            saveAuthState(false, null, null)
+            Toast.makeText(context, "Đăng xuất thành công", Toast.LENGTH_SHORT).show()
+        } catch (e: Exception) {
+            Toast.makeText(context, "Lỗi đăng xuất: ${e.message}", Toast.LENGTH_SHORT).show()
+        } finally {
+            _isLoading.value = false
+            onComplete()
+        }
+    }
+
+    fun createUser(email: String, password: String, context: Context, onSuccess: () -> Unit, onError: (String) -> Unit) {
+        _isLoading.value = true
+        auth.createUserWithEmailAndPassword(email, password)
+            .addOnCompleteListener { task ->
+                if (task.isSuccessful) {
+                    val user = auth.currentUser
+                    if (user != null) {
+                        val userData = hashMapOf(
+                            "role" to "user",
+                            "email" to email,
+                            "createdAt" to System.currentTimeMillis()
+                        )
+                        db.collection("users").document(user.uid)
+                            .set(userData)
+                            .addOnSuccessListener {
+                                _currentUserRole.value = "user"
+                                _isAdmin.value = false
+                                _currentUserShortId.value = null
+                                _isLoggedIn.value = true
+                                saveAuthState(false, "user", null)
+                                _isLoading.value = false
+                                Toast.makeText(context, "Tạo tài khoản thành công", Toast.LENGTH_SHORT).show()
+                                onSuccess()
+                            }
+                            .addOnFailureListener { e ->
+                                _isLoading.value = false
+                                onError("Lỗi khi tạo thông tin người dùng: ${e.message}")
+                            }
+                    }
+                } else {
+                    _isLoading.value = false
+                    onError(task.exception?.message ?: "Lỗi tạo tài khoản")
+                }
+            }
     }
 
     fun createAdminAccount(email: String, password: String, context: Context, onSuccess: () -> Unit, onError: (String) -> Unit) {
@@ -141,27 +246,80 @@ object AuthState {
                     if (user != null) {
                         val userData = hashMapOf(
                             "role" to "admin",
-                            "email" to email
+                            "email" to email,
+                            "createdAt" to System.currentTimeMillis()
                         )
                         db.collection("users").document(user.uid)
                             .set(userData)
                             .addOnSuccessListener {
-                                _isAdmin.value = true
-                                _currentUserRole.value = "admin"
-                                _isLoggedIn.value = true
-                                saveAuthState(true, "admin", null)
-                                _isLoading.value = false
-                                onSuccess()
+                                val adminData = hashMapOf(
+                                    "email" to email,
+                                    "createdAt" to System.currentTimeMillis(),
+                                    "isActive" to true
+                                )
+                                db.collection("admin").document(user.uid)
+                                    .set(adminData)
+                                    .addOnSuccessListener {
+                                        _currentUserRole.value = "admin"
+                                        _isAdmin.value = true
+                                        _currentUserShortId.value = null
+                                        _isLoggedIn.value = true
+                                        saveAuthState(true, "admin", null)
+                                        _isLoading.value = false
+                                        Toast.makeText(context, "Tài khoản admin đã được tạo thành công!", Toast.LENGTH_LONG).show()
+                                        onSuccess()
+                                    }
+                                    .addOnFailureListener { e ->
+                                        _isLoading.value = false
+                                        onError("Lỗi khi tạo thông tin admin: ${e.message}")
+                                    }
                             }
                             .addOnFailureListener { e ->
                                 _isLoading.value = false
-                                onError(e.message ?: "Failed to create admin account")
+                                onError("Lỗi khi tạo quyền admin: ${e.message}")
                             }
                     }
                 } else {
                     _isLoading.value = false
-                    onError(task.exception?.message ?: "Failed to create user")
+                    onError(task.exception?.message ?: "Lỗi tạo tài khoản admin")
                 }
+            }
+    }
+
+    fun setAdminRole(userId: String, email: String, context: Context, onSuccess: () -> Unit, onError: (String) -> Unit) {
+        _isLoading.value = true
+
+        // Cập nhật role trong collection users
+        val userRef = db.collection("users").document(userId)
+        val userData = hashMapOf(
+            "role" to "admin",
+            "email" to email,
+            "updatedAt" to System.currentTimeMillis()
+        )
+
+        userRef.set(userData)
+            .addOnSuccessListener {
+                // Tạo hoặc cập nhật document trong collection admin
+                val adminRef = db.collection("admin").document(userId)
+                val adminData = hashMapOf(
+                    "email" to email,
+                    "createdAt" to System.currentTimeMillis(),
+                    "isActive" to true
+                )
+
+                adminRef.set(adminData)
+                    .addOnSuccessListener {
+                        _isLoading.value = false
+                        onSuccess()
+                    }
+                    .addOnFailureListener { e ->
+                        _isLoading.value = false
+                        onError("Lỗi khi cập nhật thông tin admin: ${e.message}")
+                    }
+            }
+            .addOnFailureListener { e ->
+                _isLoading.value = false
+                onError("Lỗi khi cập nhật quyền admin: ${e.message}")
             }
     }
 } 

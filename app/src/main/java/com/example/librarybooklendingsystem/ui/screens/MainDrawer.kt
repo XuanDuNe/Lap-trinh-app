@@ -11,6 +11,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
@@ -31,7 +32,7 @@ val categories = listOf(
     Category("Văn học", "Văn học"),
     Category("Văn học thiếu nhi", "Văn học thiếu nhi"),
     Category("Khoa học viễn tưởng", "Khoa học viễn tưởng"),
-    Category("Kỹ năng sống", "Kỹ năng sống"),
+    Category("Kỹ năng sống", "Kỹ năng sống")
 )
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -41,32 +42,36 @@ fun MainDrawer(
     onCloseDrawer: () -> Unit,
     categoryViewModel: CategoryViewModel
 ) {
+    val context = LocalContext.current
     val isLoggedIn by AuthState.isLoggedIn.collectAsStateWithLifecycle()
-    val currentUser by AuthState.currentUser.collectAsState(initial = null)
+    val currentUser by AuthState.currentUser.collectAsStateWithLifecycle()
     val selectedCategory by categoryViewModel.selectedCategory.collectAsState()
-
-    var userName by remember { mutableStateOf("") }
+    
+    var userName by remember { mutableStateOf("Người dùng") }
     val scope = rememberCoroutineScope()
-
+    
     LaunchedEffect(isLoggedIn) {
         if (!isLoggedIn) {
             userName = "Người dùng"
             categoryViewModel.clearSelectedCategory()
         }
     }
-
+    
     LaunchedEffect(currentUser) {
         if (currentUser != null) {
             scope.launch {
                 try {
                     val userInfo = FirebaseManager.getUserInfo(currentUser!!.uid)
-                    userName = userInfo?.get("name") as? String ?: ""
+                    userName = userInfo?.get("name") as? String ?: "Người dùng"
                     Log.d("MainDrawer", "User info: $userInfo")
                     Log.d("MainDrawer", "User name: $userName")
                 } catch (e: Exception) {
                     Log.e("MainDrawer", "Error getting user info: ${e.message}")
+                    userName = "Người dùng"
                 }
             }
+        } else {
+            userName = "Người dùng"
         }
     }
 
@@ -96,7 +101,7 @@ fun MainDrawer(
                 Spacer(modifier = Modifier.width(12.dp))
                 Column {
                     Text(
-                        text = if (userName.isNotEmpty()) userName else "Người dùng",
+                        text = userName,
                         style = MaterialTheme.typography.titleMedium,
                         color = Color.DarkGray
                     )
@@ -108,6 +113,23 @@ fun MainDrawer(
                 }
             }
         }
+
+        Divider(modifier = Modifier.padding(vertical = 8.dp))
+
+        // Library section
+        DrawerMenuItem(
+            icon = Icons.Default.Home,
+            text = "Thư viện",
+            selected = selectedCategory == null,
+            onClick = {
+                categoryViewModel.clearSelectedCategory()
+                navController.navigate("home") {
+                    popUpTo(navController.graph.startDestinationId)
+                    launchSingleTop = true
+                }
+                onCloseDrawer()
+            }
+        )
 
         Divider(modifier = Modifier.padding(vertical = 8.dp))
 
@@ -131,6 +153,9 @@ fun MainDrawer(
                     onClick = {
                         Log.d("MainDrawer", "Category selected - ID: ${category.id}, Name: ${category.name}")
                         categoryViewModel.setSelectedCategory(category.id)
+                        navController.navigate("home") {
+                            popUpTo(0) { inclusive = true }
+                        }
                         onCloseDrawer()
                     }
                 )
@@ -150,16 +175,13 @@ fun MainDrawer(
             onClick = {
                 if (isLoggedIn) {
                     Log.d("MainDrawer", "Logout clicked")
-                    try {
-                        AuthState.signOut()
+                    AuthState.signOut(context) {
                         categoryViewModel.clearSelectedCategory()
                         userName = "Người dùng"
                         navController.navigate("home") {
                             popUpTo(0) { inclusive = true }
                         }
                         onCloseDrawer()
-                    } catch (e: Exception) {
-                        Log.e("MainDrawer", "Error during logout: ${e.message}")
                     }
                 } else {
                     navController.navigate("login")

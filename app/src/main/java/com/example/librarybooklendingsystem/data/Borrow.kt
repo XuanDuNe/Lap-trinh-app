@@ -6,14 +6,14 @@ import java.util.Date
 data class Borrow(
     val id: String = "",
     val userId: String = "",
-    val userEmail: String = "", // Thêm email để tiện hiển thị nếu cần
+    val userEmail: String = "",
     val bookId: String = "",
     val bookTitle: String = "",
-    val bookCategory: String = "", // Trường bạn đang dùng
+    val bookCategory: String = "",
     val borrowDate: Date? = null,
     val expectedReturnDate: Date? = null,
     val actualReturnDate: Date? = null,
-    val status: String = "" // Trường bạn đang dùng ("Đang mượn", "Đã trả", ...)
+    val status: String = ""
 ) {
     companion object {
         fun fromMap(id: String, map: Map<String, Any>): Borrow {

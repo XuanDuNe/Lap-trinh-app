@@ -13,20 +13,24 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.librarybooklendingsystem.data.AuthState
+import androidx.navigation.NavController
+import androidx.navigation.compose.rememberNavController
 
 class CreateAdminAccount : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
             MaterialTheme {
-                CreateAdminAccountScreen()
+                val navController = rememberNavController()
+                CreateAdminAccountScreen(navController)
             }
         }
     }
 }
 
 @Composable
-fun CreateAdminAccountScreen() {
+fun CreateAdminAccountScreen(navController: NavController) {
     val context = LocalContext.current
     var adminUid by remember { mutableStateOf("") }
     var isLoading by remember { mutableStateOf(true) }
@@ -43,6 +47,9 @@ fun CreateAdminAccountScreen() {
             onSuccess = {
                 adminUid = AuthState.getCurrentUser()?.uid ?: ""
                 isLoading = false
+                AuthState.signOut(context) {
+                    navController.navigate("login")
+                }
             },
             onError = { error ->
                 Toast.makeText(context, error, Toast.LENGTH_LONG).show()

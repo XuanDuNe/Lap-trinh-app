@@ -26,7 +26,7 @@ import androidx.navigation.compose.rememberNavController
 import com.example.librarybooklendingsystem.R
 import com.example.librarybooklendingsystem.data.Book
 import com.example.librarybooklendingsystem.data.FirebaseManager
-import com.example.librarybooklendingsystem.ui.screens.AuthState
+import com.example.librarybooklendingsystem.data.AuthState
 import coil.compose.AsyncImage
 import com.example.librarybooklendingsystem.ui.components.CommonHeader
 import kotlinx.coroutines.launch
